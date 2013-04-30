@@ -1,0 +1,35 @@
+#!/usr/bin/perl -w
+
+#TODO
+#- add help
+
+use strict;
+use Getopt::Long;
+
+my %opt;
+GetOptions(
+    "test=s" => \$opt{test},
+    "proxy:s" => \$opt{proxy},
+ );
+
+if ( not defined $opt{test} )
+{
+    print "UNKNOWN: Specify testfile to run.\n";
+    exit 3;
+}
+
+my $casper_cmd = 'casperjs --test='.$opt{test};
+if ($opt{proxy})
+{
+    $casper_cmd .= ' --proxy='.$opt{proxy};
+}
+$casper_cmd .= ' HolyGhost.js 2>&1';
+
+my @output = `$casper_cmd`;
+my $rc = ($? >> 8);
+
+# get last line
+print pop(@output);
+# print the rest
+print join("",@output);
+exit $rc;
