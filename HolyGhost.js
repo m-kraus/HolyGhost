@@ -48,6 +48,18 @@ var casper = require('casper').create({
     verbose: config.casper.verbose,
     stepTimeout: config.casper.stepTimeout,
     timeout: config.casper.timeout,
+	onError: function(self, m) {
+    	casper.echo('onError'+m);
+    },
+	onStepTimeout: function(self, m) {
+    	casper.echo('onStepTimeout'+m);
+    },
+	onTimeout: function(self, m) {
+    	casper.echo('onTimeout'+m);
+    },
+	onWaitTimeout: function(self, m) {
+    	casper.echo('onWaitTimeout'+m);
+    },
     failFast: config.casper.failFast
 });
 
@@ -333,15 +345,15 @@ casper.on('load.failed', function(object) {
 casper.on('load.finished', function() {
     casper.echo('_____LOAD.FINISHED');
     });
-casper.on('error', function(msg, backtrace) {
-    casper.echo('_____ERROR');
-    });
 casper.on('step.created', function() {
     casper.echo('_____STEP.CREATED');
     });
  */
 
 
+casper.on('error', function(msg, backtrace) {
+    casper.echo('_____ERROR');
+    });
 
 /*
  * Run and finish
@@ -351,6 +363,7 @@ casper.run(function() {
     var totalFailed = this.test.getFailures().length;
     var totalTests = totalPassed + totalFailed;
 
+	// ueberdenken
     if (stepCount < totalTests) {
         casper.echo('ThisWasFailfast');
         }
