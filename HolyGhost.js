@@ -1,13 +1,11 @@
 //TODO
-// implement failfast
-// handle step timeouts and/or errors
+// handle step timeouts and/or errors better
 // complete documentation
 // take screenshot when?
 // make screenshots configurable
-// make maxtests safer
-// write python handler
 // implement http errors
-// implement timeout thresholds?
+// check when timeouts occur
+// implement total time even on timeout
 
 /*
  * Initialize default objects
@@ -21,18 +19,42 @@ var config = {
         viewportSize: {
             width : 1024,
             height : 768
-        },
+            },
         pageSettings: {
             loadImages :  true,
             loadPlugins : false
-        },
+            },
         logLevel : 'error',
         verbose : true,
         stepTimeout : 10000,
         timeout : 30000,
         failFast : true
-            }
+        }
     };
+
+/*
+ * Initialize base variables
+ */
+var stepCount = 0;
+var stepsFailed = 0;
+var testsFailed = 0;
+var stepName = '';
+var testStartTime = new Date().toISOString();
+var t1;
+var t2;
+var t;
+
+var nagiosrc = {
+    0 : 'OK',
+    1 : 'WARNING',
+    2 : 'CRITICAL',
+    3 : 'UNKNOWN'
+    };
+
+var message = '';
+var perfdata = '|';
+
+
 
 var casper = require('casper').create({
     colorizerType : 'Dummy',
@@ -48,29 +70,43 @@ var casper = require('casper').create({
     verbose: config.casper.verbose,
     stepTimeout: config.casper.stepTimeout,
     timeout: config.casper.timeout,
-	onError: function(self, m) {
-    	casper.echo('onError'+m);
+    failFast: config.casper.failFast,
+    //TODO
+    //onWaitTimeout: function() {
+    //},
+    onStepTimeout: function() {
+        // Format step names
+        stepCount++;
+        stepsFailed++;
+        if (stepName === '') {
+            stepName = 'step'+stepCount;
+        } else {
+            // safely replace whitespace characters
+            stepName  = stepName.replace(/\s+/g, '_');
+            }
+        // Format output
+        casper.echo('Step ('+stepName+') exceeded timeout of '+config.casper.stepTimeout+'msec');
+        // Add perfdata
+	    t2 = new Date().getTime();
+	    t = t2 - t1;
+        perfdata += '\''+stepName+'\'='+t+'msec ';
+        // Take screenshot
+       	var now = new Date().toISOString();
+        casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
+        // Exit
+        var rc = config.errorLevel;
+        message += nagiosrc[rc]+': Timeout in step '+stepName+', failed '+stepsFailed+' steps';
+        casper.echo(message+perfdata);
+        this.exit(rc);
     },
-	onStepTimeout: function(self, m) {
-    	casper.echo('onStepTimeout'+m);
-    },
-	onTimeout: function(self, m) {
-    	casper.echo('onTimeout'+m);
-    },
-	onWaitTimeout: function(self, m) {
-    	casper.echo('onWaitTimeout'+m);
-    },
-    failFast: config.casper.failFast
+    //TODO
+    //onTimeout: function() {
+    //}
 });
-
-
-
 /*
  * Include helper libraries
  */
 var fs = require('fs');
-
-
 
 /*
  * Format date as ISO string
@@ -89,28 +125,6 @@ Date.prototype.toISOString = function () {
 
 
 
-/*
- * Initialize base variables
- */
-var stepCount = 0;
-var stepName = '';
-var testFile = casper.cli.options['test'];
-var testStartTime = new Date().toISOString();
-var t1;
-var t2;
-var t;
-
-var nagiosrc = {
-    0 : 'OK',
-    1 : 'WARNING',
-    2 : 'CRITICAL',
-    3 : 'UNKNOWN'
-    };
-
-var message = '';
-var perfdata = '|';
-
-
 
 /*
  * Start casper, load test case and parse local config options
@@ -120,6 +134,7 @@ var testConfig;
 casper.start();
 
 // Load test case file
+var testFile = casper.cli.options['test'];
 if(/^\/.*$/.test(testFile)) {
     require(testFile);
 } else {
@@ -249,13 +264,7 @@ if (config.har) {
 	}
 
 
-
-/*
- * Format step output and take screenshot
- */
-casper.on('step.complete', function(stepResult) {
-    //DEBUG require('utils').dump(stepResult);
-    var now = new Date().toISOString();
+casper.on('step.start', function(stepResult) {
     // Format step names
     stepCount++;
     if (stepName === '') {
@@ -264,8 +273,23 @@ casper.on('step.complete', function(stepResult) {
         // safely replace whitespace characters
         stepName  = stepName.replace(/\s+/g, '_');
         }
+    });
+
+/*
+ * Format step output and take screenshot
+ */
+casper.on('step.complete', function(stepResult) {
+    if (this.test.getFailures().length > testsFailed) {
+        var stepMessage = 'failed';
+        stepsFailed++;
+        testsFailed = this.test.getFailures().length;
+    } else {
+        var stepMessage = 'passed';
+    }
+   
+    var now = new Date().toISOString();
     // Format output
-    casper.echo('Step ('+stepName+') took '+t+'msec');
+    casper.echo('Step ('+stepName+') '+stepMessage+', took '+t+'msec');
     // Add perfdata
     perfdata += '\''+stepName+'\'='+t+'msec ';
     // Take screenshot
@@ -345,35 +369,26 @@ casper.on('load.failed', function(object) {
 casper.on('load.finished', function() {
     casper.echo('_____LOAD.FINISHED');
     });
+casper.on('error', function(msg, backtrace) {
+    casper.echo('_____ERROR');
+    });
 casper.on('step.created', function() {
     casper.echo('_____STEP.CREATED');
     });
  */
 
 
-casper.on('error', function(msg, backtrace) {
-    casper.echo('_____ERROR');
-    });
 
 /*
  * Run and finish
  */
 casper.run(function() {
-    var totalPassed = this.test.getPasses().length;
-    var totalFailed = this.test.getFailures().length;
-    var totalTests = totalPassed + totalFailed;
-
-	// ueberdenken
-    if (stepCount < totalTests) {
-        casper.echo('ThisWasFailfast');
-        }
-    casper.echo('###totaltests###'+totalTests);
-    if (totalFailed > 0) {
+    if (stepsFailed > 0) {
         var rc = config.errorLevel;
-        message += nagiosrc[rc]+': failed '+totalFailed+' tests of '+totalTests+', passed '+totalPassed+' tests.';
+        message += nagiosrc[rc]+': failed '+stepsFailed+' steps.';
     } else {
         var rc = 0;
-        message += nagiosrc[rc]+': passed all '+totalTests+' tests.';
+        message += nagiosrc[rc]+': passed all steps';
         }
     casper.echo(message+perfdata);
     this.exit(rc);

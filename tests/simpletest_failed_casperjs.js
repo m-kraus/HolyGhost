@@ -22,5 +22,5 @@ casper.thenOpen('http://www.google.de/', function() {
 
 casper.then(function() {
     stepName = 'find_cheese';
-    this.test.assertMatch(this.getTitle(), /cheeseeee/i, 'Verify title contains "cheeseeee"');
+    this.test.assertMatch(this.getTitle(), /xheeseeee/i, 'Verify title contains "cheeseeee"');
 });

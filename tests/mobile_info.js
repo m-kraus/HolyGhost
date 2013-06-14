@@ -8,9 +8,9 @@ testConfig = {
 	har:  true,
     casper : {
         logLevel: "error",
-        verbose: false,
-        stepTimeout: 10000,
-        timeout: 30000
+        verbose: true,
+        stepTimeout: 5000,
+        timeout: 10000
             }
     };
 

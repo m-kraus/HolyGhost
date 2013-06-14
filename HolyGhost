@@ -8,8 +8,9 @@ use Getopt::Long;
 
 my %opt;
 GetOptions(
-    "test=s" => \$opt{test},
-    "proxy:s" => \$opt{proxy},
+    "t|test=s" => \$opt{test},
+    "p|proxy:s" => \$opt{proxy},
+    "d|debug" => \$opt{debug},
  );
 
 if ( not defined $opt{test} )
@@ -22,6 +23,10 @@ my $casper_cmd = 'casperjs --test='.$opt{test};
 if ($opt{proxy})
 {
     $casper_cmd .= ' --proxy='.$opt{proxy};
+}
+if ($opt{debug})
+{
+    $casper_cmd .= ' --debug=true';
 }
 $casper_cmd .= ' HolyGhost.js 2>&1';
 
