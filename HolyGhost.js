@@ -6,6 +6,7 @@
 // implement http errors
 // check when timeouts occur
 // implement total time even on timeout
+// make screenshots configurable
 
 /*
  * Initialize default objects
@@ -76,7 +77,7 @@ var casper = require('casper').create({
     //},
     onStepTimeout: function() {
         // Format step names
-        stepCount++;
+        //TODO stepCount++;
         stepsFailed++;
         if (stepName === '') {
             stepName = 'step'+stepCount;
@@ -93,6 +94,10 @@ var casper = require('casper').create({
         // Take screenshot
        	var now = new Date().toISOString();
         casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
+        // Save Har TODO
+        var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
+        var now = new Date().toISOString();
+        fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
         // Exit
         var rc = config.errorLevel;
         message += nagiosrc[rc]+': Timeout in step '+stepName+', failed '+stepsFailed+' steps';
@@ -235,17 +240,25 @@ if (config.har) {
         pg.startTime = new Date();
         }); 
 
-    casper.on('load.finished', function (status) {
-        var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
-       	var now = new Date().toISOString();
-       	fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
-    	});
+    //TODO
+    //casper.on('load.finished', function (status) {
+    //    var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
+    //   	var now = new Date().toISOString();
+    //   	fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
+    // 	});
 	casper.on('page.initialized', function (page) {
 	    // INFO this is the first url after about:blank
 	  	pg.address = page.url;
+	    });
+
+	casper.on('resource.requested', function (req, request) {
+        //TODO make configurable, save patch
+	   	if(req.url.indexOf("push.dab-bank") > -1) {
+            request.abort();
+            }
 	    }); 
 	
-	casper.on('resource.requested', function (req) {
+	casper.on('resource.requested', function (req, request) {
 	   	pg.resources[req.id] = { 
 	   	    request: req,
 	   	    startReply: null,
@@ -383,6 +396,9 @@ casper.on('step.created', function() {
  * Run and finish
  */
 casper.run(function() {
+    var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
+    var now = new Date().toISOString();
+    fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
     if (stepsFailed > 0) {
         var rc = config.errorLevel;
         message += nagiosrc[rc]+': failed '+stepsFailed+' steps.';
