@@ -1,0 +1,42 @@
+#!/usr/bin/perl -w
+
+#TODO
+#- add help
+
+use strict;
+use Getopt::Long;
+
+my %opt;
+GetOptions(
+    "test=s" => \$opt{test},
+    "pre:s" => \$opt{pre},
+    "post:s" => \$opt{post},
+    "proxy:s" => \$opt{proxy},
+    "debug" => \$opt{debug},
+ );
+
+if ( not defined $opt{test} )
+{
+    print "UNKNOWN: Specify testfile to run.\n";
+    exit 3;
+}
+
+my $casper_cmd = 'casperjs2 test '.$opt{test};
+
+$casper_cmd .= ' --pre='.$opt{pre} if ($opt{pre}) ;
+$casper_cmd .= ' --post='.$opt{post} if ($opt{post}) ;
+$casper_cmd .= ' --proxy='.$opt{proxy} if ($opt{proxy}) ;
+$casper_cmd .= ' --debug=true' if ($opt{debug});
+
+#TODO wie soll dann das Skript eingebettet werden? Via include? Eher gesplittet in pre und post
+#TODO hooks dann evtl via inc
+$casper_cmd .= ' HolyGhost.js 2>&1';
+
+my @output = `$casper_cmd`;
+my $rc = ($? >> 8);
+
+# get last line
+print pop(@output);
+# print the rest
+print join("",@output);
+exit $rc;
