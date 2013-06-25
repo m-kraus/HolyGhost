@@ -76,6 +76,7 @@ var casper = require('casper').create({
     //onWaitTimeout: function() {
     //},
     onStepTimeout: function() {
+    	//TODO not twice
         // Format step names
         //TODO stepCount++;
         stepsFailed++;
@@ -84,18 +85,19 @@ var casper = require('casper').create({
         } else {
             // safely replace whitespace characters
             stepName  = stepName.replace(/\s+/g, '_');
-            }
+        }
         // Format output
         casper.echo('Step ('+stepName+') exceeded timeout of '+config.casper.stepTimeout+'msec');
         // Add perfdata
-	    t2 = new Date().getTime();
-	    t = t2 - t1;
+	t2 = new Date().getTime();
+	t = t2 - t1;
         perfdata += '\''+stepName+'\'='+t+'msec ';
         // Take screenshot
        	var now = new Date().toISOString();
         casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
-        // Save Har TODO
-        var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
+        // Save Har
+        pg.endTime = new Date();
+        var content = JSON.stringify(createHar(config.testName, config.testName, pg.startTime, pg.resources), undefined, 4);
         var now = new Date().toISOString();
         fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
         // Exit
@@ -108,10 +110,13 @@ var casper = require('casper').create({
     //onTimeout: function() {
     //}
 });
+
+
 /*
  * Include helper libraries
  */
 var fs = require('fs');
+
 
 /*
  * Format date as ISO string
@@ -127,8 +132,6 @@ Date.prototype.toISOString = function () {
         pad(this.getSeconds()) + '.' +
         ms(this.getMilliseconds()) + 'Z';
 }
-
-
 
 
 /*
@@ -161,8 +164,7 @@ for(var key in testConfig) {
  * HAR creation
  */
 if (config.har) {
-    function createHar(address, title, startTime, resources)
-    {
+    function createHar(address, title, startTime, resources) {
         var entries = [];
     
         resources.forEach(function (resource) {
@@ -173,6 +175,12 @@ if (config.har) {
             if (!request || !startReply || !endReply) {
                 return;
             }
+
+	    // Exclude Data URI from HAR file because
+	    // they aren't included in specification
+	    if (request.url.match(/(^data:image\/.*)/i)) {	
+	        return;
+	    }
     
             entries.push({
                 startedDateTime: request.time.toISOString(),
@@ -210,7 +218,8 @@ if (config.har) {
                     wait: startReply.time - request.time,
                     receive: endReply.time - startReply.time,
                     ssl: -1
-                }
+                },
+                pageref: []
             });
         });
 
@@ -218,7 +227,7 @@ if (config.har) {
         log: {
             version: '1.2',
             creator: {
-                name: "CasperJS",
+                name: "PhantomJS",
                 version: phantom.version.major + '.' + phantom.version.minor +
                     '.' + phantom.version.patch
             },
@@ -226,57 +235,55 @@ if (config.har) {
                 startedDateTime: startTime.toISOString(),
                 id: address,
                 title: title,
-                pageTimings: {}
+                pageTimings: {
+                	onLoad: pg.endTime - pg.startTime
+                }
             }],
             entries: entries
         }
     };
 }
 
-	var pg = new WebPage()
-	pg.resources = [];
-
+    var pg = new WebPage()
+    pg.resources = [];
+    
     casper.on('load.started', function (res) {
         pg.startTime = new Date();
-        }); 
-
-    //TODO
-    //casper.on('load.finished', function (status) {
-    //    var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
-    //   	var now = new Date().toISOString();
-    //   	fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
-    // 	});
-	casper.on('page.initialized', function (page) {
-	    // INFO this is the first url after about:blank
-	  	pg.address = page.url;
-	    });
-
-	casper.on('resource.requested', function (req, request) {
-        //TODO make configurable, save patch
-	   	if(req.url.indexOf("push.dab-bank") > -1) {
-            request.abort();
-            }
-	    }); 
-	
-	casper.on('resource.requested', function (req, request) {
-	   	pg.resources[req.id] = { 
-	   	    request: req,
-	   	    startReply: null,
-	   	    endReply: null
-			};
-	    }); 
-	
-	casper.on('resource.received', function(res) {
-		if (res.stage === 'start') {
-			pg.resources[res.id].startReply = res;
-		    }   
-		if (res.stage === 'end') {
-		    pg.resources[res.id].endReply = res;
-		    }
-	    });
-	}
+    }); 
+    
+    casper.on('resource.requested', function (req, request) {
+       	pg.resources[req.id] = { 
+       	    request: req,
+       	    startReply: null,
+       	    endReply: null
+        };
+    }); 
+    
+    casper.on('resource.received', function(res) {
+    	if (res.stage === 'start') {
+    	    pg.resources[res.id].startReply = res;
+    	}   
+    	if (res.stage === 'end') {
+    	    pg.resources[res.id].endReply = res;
+    	}
+    });
+}
 
 
+/*
+ * Ignore resources from specific URIs
+ */
+casper.on('resource.requested', function (req, request) {
+//TODO make configurable, save patch
+   	if(req.url.indexOf("push.dab-bank") > -1) {
+    request.abort();
+    }
+}); 
+
+
+/*
+ * Format step names
+ */
 casper.on('step.start', function(stepResult) {
     // Format step names
     stepCount++;
@@ -285,8 +292,9 @@ casper.on('step.start', function(stepResult) {
     } else {
         // safely replace whitespace characters
         stepName  = stepName.replace(/\s+/g, '_');
-        }
-    });
+    }
+});
+
 
 /*
  * Format step output and take screenshot
@@ -309,20 +317,19 @@ casper.on('step.complete', function(stepResult) {
     casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
     // Reset stepName
     stepName = '';
-    });
-
+});
 
 
 /*
  * Timer functions
  */
 casper.on('load.started', function() {
-	t1 = new Date().getTime();
-    });
+    t1 = new Date().getTime();
+});
 casper.on('load.finished', function() {
-	t2 = new Date().getTime();
-	t = t2 - t1;
-    });
+    t2 = new Date().getTime();
+    t = t2 - t1;
+});
 
 
 
@@ -396,7 +403,8 @@ casper.on('step.created', function() {
  * Run and finish
  */
 casper.run(function() {
-    var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
+    pg.endTime = new Date();
+    var content = JSON.stringify(createHar(config.testName, config.testName, pg.startTime, pg.resources), undefined, 4);
     var now = new Date().toISOString();
     fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
     if (stepsFailed > 0) {
@@ -408,4 +416,4 @@ casper.run(function() {
         }
     casper.echo(message+perfdata);
     this.exit(rc);
-	});
+});
