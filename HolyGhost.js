@@ -1,12 +1,11 @@
 //TODO
-// handle step timeouts and/or errors better
 // complete documentation
 // take screenshot when?
 // make screenshots configurable
-// implement http errors
 // check when timeouts occur
 // implement total time even on timeout
-// make screenshots configurable
+// make url exclusions configurable
+// Timout handling necessary also on onWaitTimeout and onTimeout
 
 /*
  * Initialize default objects
@@ -28,8 +27,7 @@ var config = {
         logLevel : 'error',
         verbose : true,
         stepTimeout : 10000,
-        timeout : 30000,
-        failFast : true
+        timeout : 30000
         }
     };
 
@@ -56,7 +54,6 @@ var message = '';
 var perfdata = '|';
 
 
-
 var casper = require('casper').create({
     colorizerType : 'Dummy',
     viewportSize: {
@@ -71,44 +68,45 @@ var casper = require('casper').create({
     verbose: config.casper.verbose,
     stepTimeout: config.casper.stepTimeout,
     timeout: config.casper.timeout,
-    failFast: config.casper.failFast,
-    //TODO
-    //onWaitTimeout: function() {
-    //},
+    failFast: true,
     onStepTimeout: function() {
-    	//TODO not twice
+    	// Timings
+    	t2 = new Date().getTime();
+    	t = t2 - t1;
+    	var now = new Date().toISOString();
+    	
         // Format step names
-        //TODO stepCount++;
+        //?? stepCount++;
         stepsFailed++;
         if (stepName === '') {
             stepName = 'step'+stepCount;
         } else {
-            // safely replace whitespace characters
-            stepName  = stepName.replace(/\s+/g, '_');
+            stepName  = stepName.replace(/\s+/g, '_'); // safely replace whitespace characters
         }
+        
         // Format output
         casper.echo('Step ('+stepName+') exceeded timeout of '+config.casper.stepTimeout+'msec');
+        
         // Add perfdata
-	t2 = new Date().getTime();
-	t = t2 - t1;
         perfdata += '\''+stepName+'\'='+t+'msec ';
+        
         // Take screenshot
-       	var now = new Date().toISOString();
         casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
-        // Save Har
-        pg.endTime = new Date();
-        var content = JSON.stringify(createHar(config.testName, config.testName, pg.startTime, pg.resources), undefined, 4);
-        var now = new Date().toISOString();
-        fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
-        // Exit
+        
+        // Save har
+        if (config.har) {
+        	pg.endTime = new Date();
+        	var content = JSON.stringify(createHar(config.testName, config.testName, pg.startTime, pg.endTime - pg.startTime, pg.resources), undefined, 4);
+        	var now = new Date().toISOString();
+        	fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
+        }
+        
+        // Exit with rc
         var rc = config.errorLevel;
         message += nagiosrc[rc]+': Timeout in step '+stepName+', failed '+stepsFailed+' steps';
         casper.echo(message+perfdata);
         this.exit(rc);
-    },
-    //TODO
-    //onTimeout: function() {
-    //}
+    }
 });
 
 
@@ -158,13 +156,11 @@ for(var key in testConfig) {
     config[key] = testConfig[key];
 }
 
-
-
 /*
  * HAR creation
  */
 if (config.har) {
-    function createHar(address, title, startTime, resources) {
+    function createHar(address, title, startTime, elapsedTime, resources) {
         var entries = [];
     
         resources.forEach(function (resource) {
@@ -176,15 +172,14 @@ if (config.har) {
                 return;
             }
 
-	    // Exclude Data URI from HAR file because
-	    // they aren't included in specification
+	    // Exclude Data URI from HAR file because they aren't included in specification
 	    if (request.url.match(/(^data:image\/.*)/i)) {	
 	        return;
 	    }
     
             entries.push({
                 startedDateTime: request.time.toISOString(),
-                time: endReply.time - request.time,
+                time: endReply ? endReply.time - request.time : -1,
                 request: {
                     method: request.method,
                     url: request.url,
@@ -196,17 +191,17 @@ if (config.har) {
                     bodySize: -1
                 },
                 response: {
-                    status: endReply.status,
-                    statusText: endReply.statusText,
+                    status: endReply ? endReply.status : 0,
+                    statusText: endReply ? endReply.statusText : "",
                     httpVersion: "HTTP/1.1",
                     cookies: [],
-                    headers: endReply.headers,
+                    headers: endReply ? endReply.headers : [],
                     redirectURL: "",
                     headersSize: -1,
-                    bodySize: startReply.bodySize,
+                    bodySize: startReply ? startReply.bodySize : -1,
                     content: {
-                        size: startReply.bodySize,
-                        mimeType: endReply.contentType
+                        size: startReply ? startReply.bodySize : -1,
+                        mimeType: endReply ? endReply.contentType : ""
                     }
                 },
                 cache: {},
@@ -215,11 +210,10 @@ if (config.har) {
                     dns: -1,
                     connect: -1,
                     send: 0,
-                    wait: startReply.time - request.time,
-                    receive: endReply.time - startReply.time,
+                    wait: startReply ? startReply.time - request.time : -1,
+                    receive: (startReply && endReply) ? endReply.time - startReply.time : -1,
                     ssl: -1
-                },
-                pageref: []
+                }
             });
         });
 
@@ -236,7 +230,8 @@ if (config.har) {
                 id: address,
                 title: title,
                 pageTimings: {
-                	onLoad: pg.endTime - pg.startTime
+                    onContentLoad : 0,
+                    onLoad : elapsedTime
                 }
             }],
             entries: entries
@@ -274,7 +269,6 @@ if (config.har) {
  * Ignore resources from specific URIs
  */
 casper.on('resource.requested', function (req, request) {
-//TODO make configurable, save patch
    	if(req.url.indexOf("push.dab-bank") > -1) {
     request.abort();
     }
@@ -300,6 +294,7 @@ casper.on('step.start', function(stepResult) {
  * Format step output and take screenshot
  */
 casper.on('step.complete', function(stepResult) {
+    // Detect failures
     if (this.test.getFailures().length > testsFailed) {
         var stepMessage = 'failed';
         stepsFailed++;
@@ -308,13 +303,18 @@ casper.on('step.complete', function(stepResult) {
         var stepMessage = 'passed';
     }
    
+    // Timings
     var now = new Date().toISOString();
+    
     // Format output
     casper.echo('Step ('+stepName+') '+stepMessage+', took '+t+'msec');
+    
     // Add perfdata
     perfdata += '\''+stepName+'\'='+t+'msec ';
+    
     // Take screenshot
     casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
+    
     // Reset stepName
     stepName = '';
 });
@@ -326,87 +326,28 @@ casper.on('step.complete', function(stepResult) {
 casper.on('load.started', function() {
     t1 = new Date().getTime();
 });
+
 casper.on('load.finished', function() {
     t2 = new Date().getTime();
     t = t2 - t1;
 });
 
 
-
-/*
- * EVENT TESTS
-// I do not understand, when step.start is emitted... so do nothing too complicated here...
-casper.on('step.start', function(step) {
-    casper.echo('_____STEP.STARTED');
-    });
-casper.on('page.created', function (WebPage) {
-    casper.echo('_____CREATED');
-    //?? NOT CALLED
-    });
-casper.on('starting', function() {
-    casper.echo('_____STARTING');
-    //?? NOT CALLED
-    });
-casper.on('started', function() {
-    casper.echo('_____STARTED');
-    //?? NOT CALLED
-    });
-casper.on('exit', function (status) {
-    casper.echo('_____EXIT');
-    //??
-    });
-casper.on('die', function (message, status) {
-    casper.echo('_____DIE');
-    //??
-    });
-casper.on('run.start', function () {
-    casper.echo('_____RUN.START');
-    //?? NOT CALLED
-    });
-casper.on('run.complete', function () {
-    casper.echo('_____RUN.COMPLETE');
-    //??
-    });
-casper.on('url.changed', function (url) {
-    casper.echo('_____URL.CHANGED'+url);
-    //??
-    });
-casper.on('wait.start', function() {
-    casper.echo('_____WAIT.START');
-    //??
-    });
-casper.on('wait.done', function() {
-    casper.echo('_____WAIT.DONE');
-    //??
-    });
-casper.on('load.started', function() {
-    casper.echo('_____LOAD.STARTED');
-    });
-casper.on('load.failed', function(object) {
-    casper.echo('_____LOAD.FAILED');
-    //??
-    });
-casper.on('load.finished', function() {
-    casper.echo('_____LOAD.FINISHED');
-    });
-casper.on('error', function(msg, backtrace) {
-    casper.echo('_____ERROR');
-    });
-casper.on('step.created', function() {
-    casper.echo('_____STEP.CREATED');
-    });
- */
-
-
-
 /*
  * Run and finish
  */
 casper.run(function() {
+    // Timings
     pg.endTime = new Date();
-    var content = JSON.stringify(createHar(config.testName, config.testName, pg.startTime, pg.resources), undefined, 4);
     var now = new Date().toISOString();
-    fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
+    
+    // Save har
+    if (config.har) {
+    	var content = JSON.stringify(createHar(config.testName, config.testName, pg.startTime, pg.endTime - pg.startTime, pg.resources), undefined, 4);
+    	fs.write(config.resultPath+'/'+config.testName+'/'+testStartTime+'/'+now+'.har', content, 'w');
+    }
+    
+    // Detect failures
     if (stepsFailed > 0) {
         var rc = config.errorLevel;
         message += nagiosrc[rc]+': failed '+stepsFailed+' steps.';
@@ -414,6 +355,8 @@ casper.run(function() {
         var rc = 0;
         message += nagiosrc[rc]+': passed all steps';
         }
+    
+    // Exit with rc
     casper.echo(message+perfdata);
     this.exit(rc);
 });
