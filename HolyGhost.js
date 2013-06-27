@@ -8,6 +8,22 @@
 // Timout handling necessary also on onWaitTimeout and onTimeout
 
 /*
+ * Format date as ISO string - override builtin early
+ */
+Date.prototype.toISOString = function () {
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function ms(n) { return n < 10 ? '00'+ n : n < 100 ? '0' + n : n }
+    return this.getFullYear() + '-' +
+        pad(this.getMonth() + 1) + '-' +
+        pad(this.getDate()) + 'T' +
+        pad(this.getHours()) + ':' +
+        pad(this.getMinutes()) + ':' +
+        pad(this.getSeconds()) + '.' +
+        ms(this.getMilliseconds()) + 'Z';
+}
+
+
+/*
  * Initialize default objects
  */
 var config = {
@@ -114,22 +130,6 @@ var casper = require('casper').create({
  * Include helper libraries
  */
 var fs = require('fs');
-
-
-/*
- * Format date as ISO string
- */
-Date.prototype.toISOString = function () {
-    function pad(n) { return n < 10 ? '0' + n : n; }
-    function ms(n) { return n < 10 ? '00'+ n : n < 100 ? '0' + n : n }
-    return this.getFullYear() + '-' +
-        pad(this.getMonth() + 1) + '-' +
-        pad(this.getDate()) + 'T' +
-        pad(this.getHours()) + ':' +
-        pad(this.getMinutes()) + ':' +
-        pad(this.getSeconds()) + '.' +
-        ms(this.getMilliseconds()) + 'Z';
-}
 
 
 /*
