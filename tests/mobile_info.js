@@ -5,7 +5,7 @@ testConfig = {
     resultPath : '/tmp/results',
     testName : 'mobile_info',
     errorLevel : 2,
-	har:  true,
+    har:  true,
     casper : {
         logLevel: "error",
         verbose: true,
