@@ -1,11 +1,8 @@
 //TODO
 // complete documentation
-// take screenshot when?
-// make screenshots configurable
-// check when timeouts occur
 // implement total time even on timeout
 // make url exclusions configurable
-// Timout handling necessary also on onWaitTimeout and onTimeout
+// timeout handling necessary also on onWaitTimeout and onTimeout
 
 /*
  * Format date as ISO string - override builtin early
@@ -31,6 +28,8 @@ var config = {
     testName : 'unset',
     errorLevel : 2,
     har :  true,
+    screenshots : true,
+    deleteOnSuccess : false,
     casper : {
         viewportSize: {
             width : 1024,
@@ -43,6 +42,7 @@ var config = {
         logLevel : 'error',
         verbose : true,
         stepTimeout : 10000,
+        //TODO leave unconfigured?
         timeout : 30000
         }
     };
@@ -97,7 +97,7 @@ var casper = require('casper').create({
         if (stepName === '') {
             stepName = 'step'+stepCount;
         } else {
-            stepName  = stepName.replace(/\s+/g, '_'); // safely replace whitespace characters
+            stepName  = 'step'+stepCount+'_'+stepName.replace(/\s+/g, '_'); // safely replace whitespace characters
         }
         
         // Format output
@@ -107,7 +107,9 @@ var casper = require('casper').create({
         perfdata += '\''+stepName+'\'='+t+'msec ';
         
         // Take screenshot
-        casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
+        if (config.screenshots) {
+        	casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
+        }
         
         // Save har
         if (config.har) {
@@ -147,6 +149,7 @@ if(/^\/.*$/.test(testFile)) {
     require('./'+testFile);
 }
 
+//TODO do these really work?
 // Parse casper config options
 for(var key in testConfig['casper']) {
     casper.options[key] = testConfig['casper'][key];
@@ -285,7 +288,7 @@ casper.on('step.start', function(stepResult) {
         stepName = 'step'+stepCount;
     } else {
         // safely replace whitespace characters
-        stepName  = stepName.replace(/\s+/g, '_');
+        stepName  =  'step'+stepCount+'_'+stepName.replace(/\s+/g, '_');
     }
 });
 
@@ -313,7 +316,9 @@ casper.on('step.complete', function(stepResult) {
     perfdata += '\''+stepName+'\'='+t+'msec ';
     
     // Take screenshot
-    casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
+    if (config.screenshots) {
+    	    casper.capture(config.resultPath+'/'+config.testName+'/'+testStartTime+'/screenshot__'+stepName+'_'+now+'.png');
+    }
     
     // Reset stepName
     stepName = '';
@@ -354,7 +359,12 @@ casper.run(function() {
     } else {
         var rc = 0;
         message += nagiosrc[rc]+': passed all steps';
+        
+        // Delete screenshots/har on success if set so
+        if (config.deleteOnSuccess) {
+        	fs.removeTree(config.resultPath+'/'+config.testName+'/'+testStartTime+'/');
         }
+    }
     
     // Exit with rc
     casper.echo(message+perfdata);
