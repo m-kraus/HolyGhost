@@ -10,7 +10,7 @@ casper.test.begin('CRITICAL::TESTNAME::Description of my test', 2, function suit
 	});
 	
 	casper.then(function() {
-		test.assertMatch(this.getTitle(), /cheeseeee/i, 'STEPNAME::Verify title contains "cheeseeee"');
+		test.assertMatch(this.getTitle(), /xcheeseeee/i, 'STEPNAME::Verify title contains "cheeseeee"');
 	});
 	casper.run(function() {
 		test.done();

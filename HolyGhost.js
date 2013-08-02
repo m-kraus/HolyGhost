@@ -5,7 +5,6 @@
  */
 
 
-
 /*
  * Get options from calling script
  */
@@ -181,8 +180,18 @@ if ( casper.cli.get("hgHar") ) {
 };
 
 /*
+ * Ignore resources from specific URIs
+ */
+casper.on('resource.requested', function (req, request) {
+   	if(req.url.indexOf("push.dab-bank") > -1) {
+    request.abort();
+    }
+}); 
+
+/*
  * Actions on step completion
  */
+<<<<<<< HEAD
 casper.on('step.complete', function(step) {
 	var now = new Date().toISOString();
 	// Take screenshots if enabled
@@ -207,4 +216,3 @@ casper.test.done();
 //	- maype parse test level from test description: "CRITICAL::mytestname::my test description here"
 //	- read test name from test desription
 //	- collect test"cases" which are assertions in realitiy together by step descriptions "mystepname::assertion described here"
-
