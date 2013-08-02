@@ -8,8 +8,9 @@ use Getopt::Long;
 
 my %opt;
 GetOptions(
-    "test=s" => \$opt{test},
-    "proxy:s" => \$opt{proxy},
+    "t|test=s" => \$opt{test},
+    "p|proxy:s" => \$opt{proxy},
+    "d|debug" => \$opt{debug},
  );
 
 if ( not defined $opt{test} )
@@ -23,6 +24,10 @@ if ($opt{proxy})
 {
     $casper_cmd .= ' --proxy='.$opt{proxy};
 }
+if ($opt{debug})
+{
+    $casper_cmd .= ' --debug=true';
+}
 $casper_cmd .= ' HolyGhost.js 2>&1';
 
 my @output = `$casper_cmd`;
@@ -33,3 +38,5 @@ print pop(@output);
 # print the rest
 print join("",@output);
 exit $rc;
+
+#casperjs2 --direct --fail-fast --pre=HolyGhost.js --hgStarttime=0123456789 --hgPid=12345 --hgResultpath=/tmp test tests/caspertest.js --hgHar --hgScreenshot

@@ -1,26 +1,18 @@
-/*
- * Configuration settings
- */
-testConfig = {
-    resultPath : '/tmp/results',
-    testName : 'google',
-    errorLevel : 2,
-	har:  true,
-    casper : {
-        logLevel: "error",
-        verbose: false,
-        stepTimeout: 10000,
-        timeout: 30000
-            }
-    };
+//casper.options.viewportSize = {width: 1600, height: 600};
+//casper.options.stepTimeout = 20000;A
+//casper.options.waitTimeout = 10000;
+//casper.options.timeout = 60000;
 
-casper.thenOpen('http://www.google.de/', function() {
-    stepName = 'open google';
-    this.test.assert(this.getTitle() === 'Google', 'Verify title is "Google"');
-    this.fill('form[action="/search"]', { q: 'cheeseeee' }, true);
-});
-
-casper.then(function() {
-    stepName = 'find_cheese';
-    this.test.assertMatch(this.getTitle(), /cheeseeee/i, 'Verify title contains "cheeseeee"');
+casper.test.begin('CRITICAL::TESTNAME::Description of my test', 2, function suite(test) {
+	casper.start('http://www.google.de/', function() {
+		test.assertTitle('Google', 'Verify title is "Google"');
+		this.fill('form[action="/search"]', { q: 'cheeseeee' }, true);
+	});
+	
+	casper.then(function() {
+		test.assertMatch(this.getTitle(), /cheeseeee/i, 'STEPNAME::Verify title contains "cheeseeee"');
+	});
+	casper.run(function() {
+		test.done();
+	});
 });
