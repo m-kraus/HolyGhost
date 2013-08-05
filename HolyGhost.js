@@ -191,7 +191,6 @@ casper.on('resource.requested', function (req, request) {
 /*
  * Actions on step completion
  */
-<<<<<<< HEAD
 casper.on('step.complete', function(step) {
 	var now = new Date().toISOString();
 	// Take screenshots if enabled
