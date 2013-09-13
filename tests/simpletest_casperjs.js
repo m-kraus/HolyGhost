@@ -5,7 +5,7 @@
 
 casper.test.begin('CRITICAL::TESTNAME::Description of my test', 2, function suite(test) {
 	casper.start('http://www.google.de/', function() {
-		test.assertTitle('Google', 'Verify title is "Google"');
+		test.assertTitle('Google', 'STEPNAME::Verify title is "Google"');
 		this.fill('form[action="/search"]', { q: 'cheeseeee' }, true);
 	});
 	

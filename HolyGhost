@@ -1,42 +1,158 @@
 #!/usr/bin/perl -w
 
 #TODO
-#- add help
+# 
+
+# FEATURES TODO
+# make har and screenshots configurable
+
+# Usage:
+my $usage = <<USAGE;
+Copyright (c) 2013 Michael Kraus
+
+TODO GNU Public License
+
+TODO Requirements Perl LibXML
+
+Usage: $0 Opions:
+	--test		file containing testcase (REQUIRED)
+	--dir		destination directory of test results (REQUIRED)
+	--proxy		specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
+	--keep		keep test results (screenshots and HAR files) on success
+	--debug		enable debugging output
+USAGE
 
 use strict;
 use Getopt::Long;
+use POSIX qw(strftime);
+use File::Path qw(make_path remove_tree);
+use XML::LibXML;
+# TODO DEBUG
+use Data::Dumper;
 
+# Extended die
+sub die_rc { my $return_code = shift; die @_ }
+
+# Set base variables
+my $pid = $$;
+my $timestamp = ( strftime "%Y-%m-%d_%H-%M-%S", localtime );
+
+# Parse options
 my %opt;
+my @required_opts = qw(test dir);
 GetOptions(
-    "t|test=s" => \$opt{test},
-    "p|proxy:s" => \$opt{proxy},
-    "d|debug" => \$opt{debug},
+	"h|help" => \&PrintUsage,
+	"test=s" => \$opt{test},
+	"dir=s" => \$opt{dir},
+	"proxy:s" => \$opt{proxy},
+	"keep" => \$opt{keep},
+	"debug" => \$opt{debug},
  );
-
-if ( not defined $opt{test} )
+foreach(@required_opts)
 {
-    print "UNKNOWN: Specify testfile to run.\n";
-    exit 3;
+	if ( not defined $opt{$_} )
+	{
+		die_rc(3, "UNKNOWN: Required parameter --$_ not defined! See $0 -h for help.\n");
+	}
 }
 
-my $casper_cmd = 'casperjs --test='.$opt{test};
+# Create test result directory
+my $dest_dir = $opt{dir} . '/' . $timestamp . '_' . $pid;
+if ( ! -e $dest_dir )
+{
+	make_path($dest_dir) or die_rc(3, "UNKNOWN: Could not create directory $dest_dir - $!");
+}
+
+#--direct
+my $casper_cmd = 'casperjs2 --no-colors --fail-fast --pre=HolyGhost.js --hgStarttime=\''.$timestamp.'\' --hgPid='.$pid.' --hgResultpath='.$opt{dir}.' --hgHar --hgScreenshot';
 if ($opt{proxy})
 {
-    $casper_cmd .= ' --proxy='.$opt{proxy};
+	$casper_cmd .= ' --proxy='.$opt{proxy};
 }
 if ($opt{debug})
 {
-    $casper_cmd .= ' --debug=true';
+	$casper_cmd .= ' --debug=true';
 }
-$casper_cmd .= ' HolyGhost.js 2>&1';
+$casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 
 my @output = `$casper_cmd`;
+my @detailed = grep (/^PASS|^FAIL|^#\s{2,}/,@output);
 my $rc = ($? >> 8);
 
-# get last line
-print pop(@output);
-# print the rest
-print join("",@output);
-exit $rc;
+# TODO safe escape detailed output, especially "|"
 
-#casperjs2 --direct --fail-fast --pre=HolyGhost.js --hgStarttime=0123456789 --hgPid=12345 --hgResultpath=/tmp test tests/caspertest.js --hgHar --hgScreenshot
+print @detailed;
+print "$rc\n";
+
+# Parse xunit log
+my %steps;
+my $parser = XML::LibXML->new();
+my $root = $parser->parse_file($dest_dir.'/xunit.log') or die_rc(3, "UNKNOWN: Cannot open " . $dest_dir . "/xunit.log for parsing\n");
+
+# Note:
+# A HolyGhosts-"Case" consist of exactly one xunit-"Testsuite", the first Testsuite will be parsed.
+# A Holyghost-"Step" consists of one or more following xunit-"Testcases".
+my @suites = $root->findnodes('/testsuites/testsuite');
+my $suite = shift(@suites);
+
+my $suite_name = $suite->getAttribute("name");
+my ( $suite_state, $suite_shortname, $suite_desc) = split(/::/, $suite_name);
+my $suite_time = $suite->getAttribute("time");
+# TODO use later
+my $suite_failures = $suite->getAttribute("failures");
+my $suite_errors = $suite->getAttribute("errors");
+
+TESTCASE: foreach my $case ($root->findnodes('/testsuites/testsuite[@name="'.$suite_name.'"]/testcase')) {
+	my $case_name = $case->getAttribute("name");
+	( $steps{$case_name}{'shortname'}, $steps{$case_name}{'desc'}) = split(/::/, $case_name);
+	$steps{$case_name}{'time'} += $case->getAttribute("time");
+}
+
+
+# Remove results on test success if "keep" is not desired
+unless ($opt{keep})
+{
+	if ( $rc == 0 )
+	{
+		remove_tree($dest_dir) or print $!;
+	}
+}
+
+
+__END__
+
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites duration="0.814">
+	<testsuite name="CRITICAL::TESTNAME::Description of my test" tests="2" failures="0" errors="0" time="0.814" timestamp="2013-09-12T11:05:57.582Z" package="tests/simpletest_casperjs">
+		<testcase name="STEPNAME::Verify title is &quot;Google&quot;" classname="tests/simpletest_casperjs" time="0.255"></testcase>
+		<testcase name="STEPNAME::Verify title contains &quot;cheeseeee&quot;" classname="tests/simpletest_casperjs" time="0.559"></testcase>
+		<system-out></system-out>
+	</testsuite>
+</testsuites>
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites duration="0.705">
+	<testsuite name="CRITICAL::TESTNAME::Description of my test" tests="2" failures="1" errors="0" time="0.698" timestamp="2013-09-12T13:18:38.611Z" package="tests/simpletest_failed_casperjs">
+		<testcase name="SIMPLETEST::Verify title is &quot;Google&quot;" classname="tests/simpletest_failed_casperjs" time="0.253"></testcase>
+		<testcase name="STEPNAME::Verify title contains &quot;cheeseeee&quot;" classname="tests/simpletest_failed_casperjs" time="0.445">
+			<failure type="assertMatch">STEPNAME::Verify title contains "cheeseeee"</failure>
+		</testcase>
+		<system-out>--fail-fast: aborted all remaining tests</system-out>
+	</testsuite>
+	<testsuite name="Untitled suite in tests/simpletest_failed_casperjs.js" tests="1" failures="1" errors="0" time="0.007" timestamp="2013-09-12T13:18:38.611Z" package="tests/simpletest_failed_casperjs">
+		<testcase name="Error: cannot call function of deleted QObject" classname="tests/simpletest_failed_casperjs" time="0.007">
+			<error type="error">Error: cannot call function of deleted QObject
+			at capture (/opt/casperjs2/modules/casper.js:291)
+			at /nfshome/dakraumi/hg/HolyGhost/HolyGhost.js:198
+			at emit (/opt/casperjs2/modules/events.js:80)
+			at runStep (/opt/casperjs2/modules/casper.js:1531)
+			at checkStep (/opt/casperjs2/modules/casper.js:368)
+			</error>
+			<failure type="uncaughtError">Error: cannot call function of deleted QObject</failure>
+		</testcase>
+		<system-out>--fail-fast: aborted all remaining tests</system-out>
+	</testsuite>
+</testsuites>
+
+	
