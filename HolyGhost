@@ -127,7 +127,7 @@ my $output;
 if ( $rc == 0 ) {
 	$output = "OK: $case_shortname ( $case_desc ) passed.".$perfdata."\n";
 } else {
-	$output = "$case_state: $case_shortname ( $case_desc ) passed.".$perfdata."\n";
+	$output = "$case_state: $case_shortname ( $case_desc ) failed.".$perfdata."\n";
 	$rc = $ERRORS{$case_state};
 }
 print $output;
