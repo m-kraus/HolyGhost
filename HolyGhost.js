@@ -8,18 +8,11 @@
 /*
  * Get options from calling script
  */
-if ( casper.cli.has('hgPid') === false ) {
-	casper.die('Needed argument hgPid not provided');
-}
-if ( casper.cli.has('hgStarttime') === false ) {
-	casper.die('Needed argument hgStarttime not provided');
-}
 if ( casper.cli.has('hgResultpath') === false ) {
-	var resultpath = '/tmp';
+	casper.die('Needed argument hgResultpath not provided');
 } else {
 	var resultpath = casper.cli.get("hgResultpath");
 }
-var tmppath = resultpath + '/' + casper.cli.get("hgStarttime") + '_' + casper.cli.get("hgPid") + '/';
 
 /*
  * Casper options
@@ -195,12 +188,12 @@ casper.on('step.complete', function(step) {
 	var now = new Date().toISOString();
 	// Take screenshots if enabled
 	if ( casper.cli.get("hgScreenshot") ) {
-		casper.capture(tmppath+'/screenshot__'+now+'.png');
+		casper.capture(resultpath+'/screenshot__'+now+'.png');
 	}
 	// Save HAR if enabled
 	if ( casper.cli.get("hgHar") ) {
 		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
-		fs.write(tmppath+'/har.har', content, 'w');
+		fs.write(resultpath+'/har.har', content, 'w');
 	};
 });
 
