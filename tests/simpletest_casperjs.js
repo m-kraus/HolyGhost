@@ -12,6 +12,7 @@ casper.test.begin('CRITICAL::CASE-NOFAIL::Description of my test', 2, function s
 	casper.then(function() {
 		test.assertMatch(this.getTitle(), /cheeseeee/i, 'STEP2::Verify title contains "cheeseeee"');
 	});
+	casper.userAgent('Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; en-GB)');
 	casper.run(function() {
 		test.done();
 	});
