@@ -28,7 +28,11 @@ use POSIX qw(strftime);
 use File::Path qw(make_path remove_tree);
 use XML::LibXML;
 # TODO DEBUG
-use Data::Dumper;
+#use Data::Dumper;
+
+#TODO get more elegant way
+my $casper_bin = '/usr/bin/casperjs2';
+my $hg_path = '/opt/hg/HolyGhost/';
 
 # Extended die
 sub die_rc { my $return_code = shift; die @_ }
@@ -73,7 +77,7 @@ if ( ! -e $dest_dir )
 
 
 #TODO --cookies-file='.$dest_dir.'/cookies.txt
-my $casper_cmd = 'casperjs2 --no-colors --fail-fast --ignore-ssl-errors=true --pre=HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
+my $casper_cmd = $casper_bin.' --no-colors --fail-fast --ignore-ssl-errors=true --pre='.$hg_path.'HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
 if ($opt{proxy})
 {
 	$casper_cmd .= ' --proxy='.$opt{proxy};
@@ -83,6 +87,7 @@ if ($opt{debug})
 	$casper_cmd .= ' --direct --debug=true';
 }
 $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
+print $casper_cmd."\n";
 
 my @output = `$casper_cmd`;
 my $rc = ($? >> 8);
