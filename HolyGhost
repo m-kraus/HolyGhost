@@ -73,7 +73,7 @@ if ( ! -e $dest_dir )
 
 
 #TODO --cookies-file='.$dest_dir.'/cookies.txt
-my $casper_cmd = 'casperjs2 --no-colors --fail-fast --pre=HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
+my $casper_cmd = 'casperjs2 --no-colors --fail-fast --ignore-ssl-errors=true --pre=HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
 if ($opt{proxy})
 {
 	$casper_cmd .= ' --proxy='.$opt{proxy};
@@ -88,6 +88,7 @@ my @output = `$casper_cmd`;
 my $rc = ($? >> 8);
 my @detailed = grep (/^PASS|^FAIL|^#\s{2,}/,@output);
 # TODO safe escape detailed output, especially "|"
+# TODO handle CasperError
 
 
 # Parse xunit log

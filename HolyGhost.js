@@ -31,18 +31,56 @@ casper.options.pageSettings = {
 /*
  * Timeout options and handling
  */
-//TODO which timeout
 casper.options.timeout = 60000;
 casper.on('timeout', function() {
 	casper.test.fail('Test ran into Overall timeout');
+	var now = new Date().toISOString();
+	// Save HTML
+	var html = casper.getHTML();
+	fs.write(resultpath+'/html__'+now+'.html', html, 'w');
+	// Take screenshots if enabled
+	if ( casper.cli.get("hgScreenshot") ) {
+		casper.capture(resultpath+'/screenshot__'+now+'.png');
+	}
+	// Save HAR if enabled
+	if ( casper.cli.get("hgHar") ) {
+		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
+		fs.write(resultpath+'/har.har', content, 'w');
+	};
 });
 casper.options.stepTimeout = 20000;
 casper.on('step.timeout', function() {
 	casper.test.fail('Test ran into Step timeout');
+	var now = new Date().toISOString();
+	// Save HTML
+	var html = casper.getHTML();
+	fs.write(resultpath+'/html__'+now+'.html', html, 'w');
+	// Take screenshots if enabled
+	if ( casper.cli.get("hgScreenshot") ) {
+		casper.capture(resultpath+'/screenshot__'+now+'.png');
+	}
+	// Save HAR if enabled
+	if ( casper.cli.get("hgHar") ) {
+		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
+		fs.write(resultpath+'/har.har', content, 'w');
+	};
 });
 casper.options.waitTimeout = 10000;
 casper.on('waitFor.timeout', function() {
 	casper.test.fail('Test ran into WaitFor timeout');
+	var now = new Date().toISOString();
+	// Save HTML
+	var html = casper.getHTML();
+	fs.write(resultpath+'/html__'+now+'.html', html, 'w');
+	// Take screenshots if enabled
+	if ( casper.cli.get("hgScreenshot") ) {
+		casper.capture(resultpath+'/screenshot__'+now+'.png');
+	}
+	// Save HAR if enabled
+	if ( casper.cli.get("hgHar") ) {
+		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
+		fs.write(resultpath+'/har.har', content, 'w');
+	};
 });
 
 /*
@@ -186,6 +224,9 @@ casper.on('resource.requested', function (req, request) {
  */
 casper.on('step.complete', function(step) {
 	var now = new Date().toISOString();
+	// Save HTML
+	var html = casper.getHTML();
+	fs.write(resultpath+'/html__'+now+'.html', html, 'w');
 	// Take screenshots if enabled
 	if ( casper.cli.get("hgScreenshot") ) {
 		casper.capture(resultpath+'/screenshot__'+now+'.png');
