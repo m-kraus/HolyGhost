@@ -33,7 +33,6 @@ casper.options.pageSettings = {
  */
 casper.options.timeout = 60000;
 casper.on('timeout', function() {
-	casper.test.fail('Test ran into Overall timeout');
 	var now = new Date().toISOString();
 	// Save HTML
 	var html = casper.getHTML();
@@ -47,10 +46,10 @@ casper.on('timeout', function() {
 		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
 		fs.write(resultpath+'/har.har', content, 'w');
 	};
+	casper.test.fail('Test ran into Overall timeout');
 });
 casper.options.stepTimeout = 20000;
 casper.on('step.timeout', function() {
-	casper.test.fail('Test ran into Step timeout');
 	var now = new Date().toISOString();
 	// Save HTML
 	var html = casper.getHTML();
@@ -64,10 +63,10 @@ casper.on('step.timeout', function() {
 		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
 		fs.write(resultpath+'/har.har', content, 'w');
 	};
+	casper.test.fail('Test ran into Step timeout');
 });
 casper.options.waitTimeout = 10000;
 casper.on('waitFor.timeout', function() {
-	casper.test.fail('Test ran into WaitFor timeout');
 	var now = new Date().toISOString();
 	// Save HTML
 	var html = casper.getHTML();
@@ -81,6 +80,7 @@ casper.on('waitFor.timeout', function() {
 		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
 		fs.write(resultpath+'/har.har', content, 'w');
 	};
+	casper.test.fail('Test ran into WaitFor timeout');
 });
 
 /*
@@ -126,6 +126,12 @@ if ( casper.cli.get("hgHar") ) {
 	        if (!request || !startReply || !endReply) {
 	            return;
 	        }
+	        
+	        // Exclude Data URI from HAR file because
+	        // they aren't included in specification
+	        if (request.url.match(/(^data:image\/.*)/i)) {
+	        	return;
+	        }
 	
 	        entries.push({
 	            startedDateTime: request.time.toISOString(),
@@ -163,7 +169,8 @@ if ( casper.cli.get("hgHar") ) {
 	                wait: startReply.time - request.time,
 	                receive: endReply.time - startReply.time,
 	                ssl: -1
-	            }
+	            },
+	            pageref: address
 	        });
 	    });
 	
@@ -179,7 +186,9 @@ if ( casper.cli.get("hgHar") ) {
 	                startedDateTime: startTime.toISOString(),
 	                id: address,
 	                title: title,
-	                pageTimings: {}
+	                pageTimings: {
+	                	onLoad: casper.endTime - casper.startTime
+	                }
 	            }],
 	            entries: entries
 	        }
@@ -191,6 +200,7 @@ if ( casper.cli.get("hgHar") ) {
 	var pg = new WebPage();
 	pg.resources = [];
 	pg.startTime = new Date();
+	casper.startTime = new Date();
 	
 	casper.on('resource.requested', function (req, request) {
 		pg.resources[req.id] = {
@@ -233,6 +243,7 @@ casper.on('step.complete', function(step) {
 	}
 	// Save HAR if enabled
 	if ( casper.cli.get("hgHar") ) {
+		casper.endTime = new Date();
 		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
 		fs.write(resultpath+'/har.har', content, 'w');
 	};
@@ -242,10 +253,3 @@ casper.on('step.complete', function(step) {
  * Finalizing this "test"
  */
 casper.test.done();
-
-//TODO for caller script
-//	- move directory dependent on test name
-//	- parse xunit log
-//	- maype parse test level from test description: "CRITICAL::mytestname::my test description here"
-//	- read test name from test desription
-//	- collect test"cases" which are assertions in realitiy together by step descriptions "mystepname::assertion described here"
