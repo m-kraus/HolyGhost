@@ -80,7 +80,7 @@ if ($opt{proxy})
 }
 if ($opt{debug})
 {
-	$casper_cmd .= ' --debug=true';
+	$casper_cmd .= ' --direct --debug=true';
 }
 $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 
@@ -89,7 +89,6 @@ my $rc = ($? >> 8);
 my @detailed = grep (/^PASS|^FAIL|^#\s{2,}/,@output);
 # TODO safe escape detailed output, especially "|"
 # TODO handle CasperError
-
 
 # Parse xunit log
 my %steps;
@@ -115,6 +114,8 @@ TESTCASE: foreach my $step ($root->findnodes('/testsuites/testsuite[@name="'.$ca
 	my ( $step_shortname, $step_desc) = split(/::/, $step_name);
 	$step{$step_shortname} += $step->getAttribute("time");
 }
+# Remove xunit.log after parsing
+unlink($dest_dir.'/xunit.log');
 
 # Format perfdata
 my $perfdata = "|";
@@ -144,41 +145,3 @@ unless ($opt{keep})
 }
 
 exit $rc;
-
-__END__
-
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites duration="0.814">
-	<testsuite name="CRITICAL::TESTNAME::Description of my test" tests="2" failures="0" errors="0" time="0.814" timestamp="2013-09-12T11:05:57.582Z" package="tests/simpletest_casperjs">
-		<testcase name="STEPNAME::Verify title is &quot;Google&quot;" classname="tests/simpletest_casperjs" time="0.255"></testcase>
-		<testcase name="STEPNAME::Verify title contains &quot;cheeseeee&quot;" classname="tests/simpletest_casperjs" time="0.559"></testcase>
-		<system-out></system-out>
-	</testsuite>
-</testsuites>
-
-
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites duration="0.705">
-	<testsuite name="CRITICAL::TESTNAME::Description of my test" tests="2" failures="1" errors="0" time="0.698" timestamp="2013-09-12T13:18:38.611Z" package="tests/simpletest_failed_casperjs">
-		<testcase name="SIMPLETEST::Verify title is &quot;Google&quot;" classname="tests/simpletest_failed_casperjs" time="0.253"></testcase>
-		<testcase name="STEPNAME::Verify title contains &quot;cheeseeee&quot;" classname="tests/simpletest_failed_casperjs" time="0.445">
-			<failure type="assertMatch">STEPNAME::Verify title contains "cheeseeee"</failure>
-		</testcase>
-		<system-out>--fail-fast: aborted all remaining tests</system-out>
-	</testsuite>
-	<testsuite name="Untitled suite in tests/simpletest_failed_casperjs.js" tests="1" failures="1" errors="0" time="0.007" timestamp="2013-09-12T13:18:38.611Z" package="tests/simpletest_failed_casperjs">
-		<testcase name="Error: cannot call function of deleted QObject" classname="tests/simpletest_failed_casperjs" time="0.007">
-			<error type="error">Error: cannot call function of deleted QObject
-			at capture (/opt/casperjs2/modules/casper.js:291)
-			at /nfshome/dakraumi/hg/HolyGhost/HolyGhost.js:198
-			at emit (/opt/casperjs2/modules/events.js:80)
-			at runStep (/opt/casperjs2/modules/casper.js:1531)
-			at checkStep (/opt/casperjs2/modules/casper.js:368)
-			</error>
-			<failure type="uncaughtError">Error: cannot call function of deleted QObject</failure>
-		</testcase>
-		<system-out>--fail-fast: aborted all remaining tests</system-out>
-	</testsuite>
-</testsuites>
-
-	
