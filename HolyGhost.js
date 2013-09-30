@@ -26,60 +26,22 @@ casper.options.pageSettings = {
 	loadPlugins: false
 };
 
-//TODO onLoadError
-
 /*
  * Timeout options and handling
  */
 casper.options.timeout = 60000;
 casper.on('timeout', function() {
-	var now = new Date().toISOString();
-	// Save HTML
-	var html = casper.getHTML();
-	fs.write(resultpath+'/html__'+now+'.html', html, 'w');
-	// Take screenshots if enabled
-	if ( casper.cli.get("hgScreenshot") ) {
-		casper.capture(resultpath+'/screenshot__'+now+'.png');
-	}
-	// Save HAR if enabled
-	if ( casper.cli.get("hgHar") ) {
-		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
-		fs.write(resultpath+'/har.har', content, 'w');
-	};
+	hgCapture(casper);
 	casper.test.fail('Test ran into Overall timeout');
 });
 casper.options.stepTimeout = 20000;
 casper.on('step.timeout', function() {
-	var now = new Date().toISOString();
-	// Save HTML
-	var html = casper.getHTML();
-	fs.write(resultpath+'/html__'+now+'.html', html, 'w');
-	// Take screenshots if enabled
-	if ( casper.cli.get("hgScreenshot") ) {
-		casper.capture(resultpath+'/screenshot__'+now+'.png');
-	}
-	// Save HAR if enabled
-	if ( casper.cli.get("hgHar") ) {
-		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
-		fs.write(resultpath+'/har.har', content, 'w');
-	};
+	hgCapture(casper);
 	casper.test.fail('Test ran into Step timeout');
 });
 casper.options.waitTimeout = 10000;
 casper.on('waitFor.timeout', function() {
-	var now = new Date().toISOString();
-	// Save HTML
-	var html = casper.getHTML();
-	fs.write(resultpath+'/html__'+now+'.html', html, 'w');
-	// Take screenshots if enabled
-	if ( casper.cli.get("hgScreenshot") ) {
-		casper.capture(resultpath+'/screenshot__'+now+'.png');
-	}
-	// Save HAR if enabled
-	if ( casper.cli.get("hgHar") ) {
-		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
-		fs.write(resultpath+'/har.har', content, 'w');
-	};
+	hgCapture(casper);
 	casper.test.fail('Test ran into WaitFor timeout');
 });
 
@@ -88,10 +50,12 @@ casper.on('waitFor.timeout', function() {
  */
 casper.on("http.status.404", function(resource) {
         //failed.push(this.requestUrl);
+        hgCapture(casper);
         casper.test.fail('HTTP Error 404');
 });
 casper.on("http.status.500", function(resource) {
         //failed.push(this.requestUrl);
+        hgCapture(casper);
         casper.test.fail('HTTP Error 500');
 });
 
@@ -109,6 +73,26 @@ Date.prototype.toISOString = function () {
 		pad(this.getSeconds()) + '.' +
 		ms(this.getMilliseconds()) + 'Z';
 };
+
+/*
+ * Funtion for capturing page html and screenshots
+ */
+function hgCapture(casper) {
+	var now = new Date().toISOString();
+	// Save HTML
+	var html = casper.getHTML();
+	fs.write(resultpath+'/html__'+now+'.html', html, 'w');
+	// Take screenshots if enabled
+	if ( casper.cli.get("hgScreenshot") ) {
+		casper.capture(resultpath+'/screenshot__'+now+'.png');
+	}
+	// Save HAR if enabled
+	if ( casper.cli.get("hgHar") ) {
+		casper.endTime = new Date();
+		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
+		fs.write(resultpath+'/har.har', content, 'w');
+	}
+}
 
 /*
  * HAR creation if enabled
@@ -233,20 +217,7 @@ casper.on('resource.requested', function (req, request) {
  * Actions on step completion
  */
 casper.on('step.complete', function(step) {
-	var now = new Date().toISOString();
-	// Save HTML
-	var html = casper.getHTML();
-	fs.write(resultpath+'/html__'+now+'.html', html, 'w');
-	// Take screenshots if enabled
-	if ( casper.cli.get("hgScreenshot") ) {
-		casper.capture(resultpath+'/screenshot__'+now+'.png');
-	}
-	// Save HAR if enabled
-	if ( casper.cli.get("hgHar") ) {
-		casper.endTime = new Date();
-		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
-		fs.write(resultpath+'/har.har', content, 'w');
-	};
+	hgCapture(casper);
 });
 
 /*
