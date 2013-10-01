@@ -3,9 +3,9 @@
 //casper.options.waitTimeout = 10000;
 //casper.options.timeout = 60000;
 
-casper.test.begin('CRITICAL::CASE-FAIL2::Description of my test', 2, function suite(test) {
+casper.test.begin('CRITICAL::CASE-FAIL2::Description of my test', 1, function suite(test) {
 	casper.start('http://www.google.de/', function() {
-		test.assertTitle('Gooxle', 'STEP1::Verify title is "Gooxle"');
+		test.assertTitle('Google', 'STEP1::Verify title is "Google"');
 	});
 	casper.run(function() {
 		test.done();

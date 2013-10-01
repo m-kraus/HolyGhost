@@ -4,6 +4,10 @@
  * This "pre"-"test" exhibits all his event processing and functions to the real test afterwards
  */
 
+/*
+ * Load fs module
+ */
+var fs = require('fs');
 
 /*
  * Get options from calling script
@@ -25,6 +29,14 @@ casper.options.pageSettings = {
 	loadImages: true,
 	loadPlugins: false
 };
+
+/*
+ * Basic settings
+  */
+var pg = new WebPage();
+pg.resources = [];
+pg.startTime = new Date();
+casper.startTime = new Date();
 
 /*
  * Timeout options and handling
@@ -89,8 +101,8 @@ function hgCapture(casper) {
 	// Save HAR if enabled
 	if ( casper.cli.get("hgHar") ) {
 		casper.endTime = new Date();
-		var content = JSON.stringify(createHar(pg.address, 'title', pg.startTime, pg.resources), undefined, 4);
-		fs.write(resultpath+'/har.har', content, 'w');
+		var content = JSON.stringify(createHar(pg.address, 'HolyGhost', pg.startTime, pg.resources), undefined, 3);
+		fs.write(resultpath+'/har'+now+'.har', content, 'w');
 	}
 }
 
@@ -177,14 +189,7 @@ if ( casper.cli.get("hgHar") ) {
 	            entries: entries
 	        }
 	    };
-	}
-	
-	var fs = require('fs');
-	
-	var pg = new WebPage();
-	pg.resources = [];
-	pg.startTime = new Date();
-	casper.startTime = new Date();
+	};
 	
 	casper.on('resource.requested', function (req, request) {
 		pg.resources[req.id] = {
@@ -217,6 +222,7 @@ casper.on('resource.requested', function (req, request) {
  * Actions on step completion
  */
 casper.on('step.complete', function(step) {
+	pg.address = this.getCurrentUrl();
 	hgCapture(casper);
 });
 
