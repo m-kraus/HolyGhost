@@ -32,7 +32,7 @@ use File::Basename;
 my $scriptpath = dirname(File::Spec->rel2abs( __FILE__ ));
 
 # Casper executable to use
-my $casper_bin = '/usr/bin/casperjs2';
+my $casper_bin = '/usr/bin/casperjs';
  
 # Extended die
 sub die_rc { my $return_code = shift; die @_ }
