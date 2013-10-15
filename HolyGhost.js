@@ -4,10 +4,29 @@
  * This "pre"-"test" exhibits all his event processing and functions to the real test afterwards
  */
 
+
+
+/*
+ * Format date as ISO string, needed to override builtin for correct HAR generation
+ */
+Date.prototype.toISOString = function () {
+	function pad(n) { return n < 10 ? '0' + n : n; }
+	function ms(n) { return n < 10 ? '00'+ n : n < 100 ? '0' + n : n }
+	return this.getFullYear() + '-' +
+		pad(this.getMonth() + 1) + '-' +
+		pad(this.getDate()) + 'T' +
+		pad(this.getHours()) + ':' +
+		pad(this.getMinutes()) + ':' +
+		pad(this.getSeconds()) + '.' +
+		ms(this.getMilliseconds()) + 'Z';
+};
+
+
 /*
  * Load fs module
  */
 var fs = require('fs');
+var utils = require('utils');
 
 /*
  * Get options from calling script
@@ -36,6 +55,7 @@ casper.options.pageSettings = {
 var pg = new WebPage();
 pg.resources = [];
 pg.startTime = new Date();
+pg.address = 'Start_'+pg.startTime.toISOString();
 casper.startTime = new Date();
 
 /*
@@ -71,20 +91,6 @@ casper.on("http.status.500", function(resource) {
         casper.test.fail('HTTP Error 500');
 });
 
-/*
- * Format date as ISO string, needed to override builtin for correct HAR generation
- */
-Date.prototype.toISOString = function () {
-	function pad(n) { return n < 10 ? '0' + n : n; }
-	function ms(n) { return n < 10 ? '00'+ n : n < 100 ? '0' + n : n }
-	return this.getFullYear() + '-' +
-		pad(this.getMonth() + 1) + '-' +
-		pad(this.getDate()) + 'T' +
-		pad(this.getHours()) + ':' +
-		pad(this.getMinutes()) + ':' +
-		pad(this.getSeconds()) + '.' +
-		ms(this.getMilliseconds()) + 'Z';
-};
 
 /*
  * Funtion for capturing page html and screenshots
@@ -222,7 +228,9 @@ casper.on('resource.requested', function (req, request) {
  * Actions on step completion
  */
 casper.on('step.complete', function(step) {
-	pg.address = this.getCurrentUrl();
+	if (utils.isTruthy(this.getCurrentUrl())) {
+		pg.address = this.getCurrentUrl();
+	}
 	hgCapture(casper);
 });
 
