@@ -1,13 +1,12 @@
 #!/usr/bin/perl -w
 
-#TODO
-# 
-
 # FEATURES TODO
 # make har and screenshots configurable
+# cli switch for casperjs binary
 
 # Usage:
-my $usage = <<USAGE;
+sub PrintUsage {
+print <<USAGE;
 Copyright (c) 2013 Michael Kraus
 
 TODO GNU Public License
@@ -21,6 +20,8 @@ Usage: $0 Opions:
 	--keep		keep test results (screenshots and HAR files) on success
 	--debug		enable debugging output
 USAGE
+exit 0;
+}
 
 use strict;
 use Getopt::Long;
@@ -76,10 +77,12 @@ if ( ! -e $dest_dir )
 }
 
 
-my $casper_cmd = $casper_bin.' --no-colors --ignore-ssl-errors=true --pre='.$scriptpath.'/HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
+my $casper_cmd = $casper_bin.' --fail-fast --no-colors --ignore-ssl-errors=true --pre='.$scriptpath.'/HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
 if ($opt{proxy})
 {
-	$casper_cmd .= ' --proxy='.$opt{proxy};
+	$casper_cmd .= ' --proxy-type=http --proxy='.$opt{proxy};
+} else {
+	$casper_cmd .= ' --proxy-type=none';
 }
 if ($opt{debug})
 {
@@ -87,7 +90,7 @@ if ($opt{debug})
 }
 $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 #DEBUG
-print $casper_cmd."\n";
+#print $casper_cmd."\n";
 
 my @output = `$casper_cmd`;
 my $rc = ($? >> 8);
