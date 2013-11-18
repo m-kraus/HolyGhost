@@ -130,7 +130,7 @@ my $perfdata = "|";
 foreach my $pstep ( keys %step ) {
 	$perfdata .= "\'$pstep\'=".$step{$pstep}."s ";
 }
-$perfdata .= "\'TOTAL\'=". $case_time."s ";
+$perfdata .= "\'Total\'=". $case_time."s ";
 
 # Format plugin output
 my $output;
