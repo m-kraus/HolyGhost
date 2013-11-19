@@ -122,8 +122,6 @@ TESTCASE: foreach my $step ($root->findnodes('/testsuites/testsuite[@name="'.$ca
 	my ( $step_shortname, $step_desc) = split(/::/, $step_name);
 	$step{$step_shortname} += $step->getAttribute("time");
 }
-# Remove xunit.log after parsing
-unlink($dest_dir.'/xunit.log');
 
 # Format perfdata
 my $perfdata = "|";
