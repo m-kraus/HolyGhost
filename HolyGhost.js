@@ -235,6 +235,13 @@ casper.on('step.complete', function(step) {
 });
 
 /*
+ * Error handling events
+ */
+casper.on('step.error', function(err) {
+    this.echo("STEP_ERROR: " + err);
+});
+
+/*
  * Finalizing this "test"
  */
 casper.test.done();

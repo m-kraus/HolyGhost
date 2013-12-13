@@ -86,7 +86,7 @@ if ($opt{proxy})
 }
 if ($opt{debug})
 {
-	$casper_cmd .= ' --direct --debug=true';
+	$casper_cmd .= ' --verbose --debug=true';
 }
 $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 #DEBUG
@@ -94,9 +94,10 @@ $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 
 my @output = `$casper_cmd`;
 my $rc = ($? >> 8);
+#DEBUG
+#print "@output\n\n\n";
 my @detailed = grep (/^PASS|^FAIL|^#\s{2,}/,@output);
 # TODO safe escape detailed output, especially "|"
-# TODO handle CasperError
 
 # Parse xunit log
 my %steps;
