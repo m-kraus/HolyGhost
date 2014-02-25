@@ -108,7 +108,7 @@ function hgCapture(casper) {
 	if ( casper.cli.get("hgHar") ) {
 		casper.endTime = new Date();
 		var content = JSON.stringify(createHar(pg.address, 'HolyGhost', pg.startTime, pg.resources), undefined, 3);
-		fs.write(resultpath+'/har'+now+'.har', content, 'w');
+		fs.write(resultpath+'/har.har', content, 'w');
 	}
 }
 
