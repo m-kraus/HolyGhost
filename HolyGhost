@@ -130,6 +130,7 @@ my $case_time = $case->getAttribute("time");
 my %step;
 TESTCASE: foreach my $step ($root->findnodes('/testsuites/testsuite[@name="'.$case_name.'"]/testcase')) {
 	my $step_name = $step->getAttribute("name");
+	next if $step_name =~ m/Test.ran.into/;
 	my ( $step_shortname, $step_desc) = split(/::/, $step_name);
 	$step{$step_shortname} += $step->getAttribute("time");
 }
