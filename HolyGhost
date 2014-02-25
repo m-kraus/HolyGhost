@@ -19,6 +19,7 @@ Usage: $0 Opions:
 	--proxy		specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
 	--keep		keep test results (screenshots and HAR files) on success
 	--debug		enable debugging output
+	--label		Use this string instead of "Total" as performance data label
 USAGE
 exit 0;
 }
@@ -60,6 +61,7 @@ GetOptions(
 	"proxy:s" => \$opt{proxy},
 	"keep" => \$opt{keep},
 	"debug" => \$opt{debug},
+	"label=s" => \$opt{label},
  );
 foreach(@required_opts)
 {
@@ -77,6 +79,15 @@ if ( ! -e $dest_dir )
 }
 
 
+my $label;
+if ($opt{label})
+{
+	$label = $opt{label};
+} else {
+	$label = 'Total';
+}
+
+
 my $casper_cmd = $casper_bin.' --fail-fast --no-colors --ignore-ssl-errors=true --pre='.$scriptpath.'/HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
 if ($opt{proxy})
 {
@@ -86,7 +97,7 @@ if ($opt{proxy})
 }
 if ($opt{debug})
 {
-	$casper_cmd .= ' --verbose --debug=true';
+	$casper_cmd .= ' --direct --debug=true';
 }
 $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 #DEBUG
@@ -94,10 +105,9 @@ $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 
 my @output = `$casper_cmd`;
 my $rc = ($? >> 8);
-#DEBUG
-#print "@output\n\n\n";
 my @detailed = grep (/^PASS|^FAIL|^#\s{2,}/,@output);
 # TODO safe escape detailed output, especially "|"
+# TODO handle CasperError
 
 # Parse xunit log
 my %steps;
@@ -129,7 +139,7 @@ my $perfdata = "|";
 foreach my $pstep ( keys %step ) {
 	$perfdata .= "\'$pstep\'=".$step{$pstep}."s ";
 }
-$perfdata .= "\'Total\'=". $case_time."s ";
+$perfdata .= "\'".$label."\'=". $case_time."s ";
 
 # Format plugin output
 my $output;

@@ -216,15 +216,6 @@ if ( casper.cli.get("hgHar") ) {
 };
 
 /*
- * Ignore resources from specific URIs
- */
-casper.on('resource.requested', function (req, request) {
-   	if(req.url.indexOf("push.dab-bank") > -1) {
-    request.abort();
-    }
-}); 
-
-/*
  * Actions on step completion
  */
 casper.on('step.complete', function(step) {
@@ -232,13 +223,6 @@ casper.on('step.complete', function(step) {
 		pg.address = this.getCurrentUrl();
 	}
 	hgCapture(casper);
-});
-
-/*
- * Error handling events
- */
-casper.on('step.error', function(err) {
-    this.echo("STEP_ERROR: " + err);
 });
 
 /*
