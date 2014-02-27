@@ -137,7 +137,7 @@ TESTCASE: foreach my $step ($root->findnodes('/testsuites/testsuite[@name="'.$ca
 
 # Format perfdata
 my $perfdata = "|";
-foreach my $pstep ( keys %step ) {
+foreach my $pstep ( sort keys %step ) {
 	$perfdata .= "\'$pstep\'=".$step{$pstep}."s ";
 }
 $perfdata .= "\'".$label."\'=". $case_time."s ";
