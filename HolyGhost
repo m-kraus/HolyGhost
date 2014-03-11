@@ -3,6 +3,7 @@
 # FEATURES TODO
 # make har and screenshots configurable
 # cli switch for casperjs binary
+# implement option --hgScreenshotAlways
 
 # Usage:
 sub PrintUsage {
@@ -88,7 +89,7 @@ if ($opt{label})
 }
 
 
-my $casper_cmd = $casper_bin.' --fail-fast --no-colors --ignore-ssl-errors=true --pre='.$scriptpath.'/HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
+my $casper_cmd = $casper_bin.' --no-colors --ignore-ssl-errors=true --pre='.$scriptpath.'/Ht.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
 if ($opt{proxy})
 {
 	$casper_cmd .= ' --proxy-type=http --proxy='.$opt{proxy};
@@ -97,7 +98,7 @@ if ($opt{proxy})
 }
 if ($opt{debug})
 {
-	$casper_cmd .= ' --direct --debug=true';
+	$casper_cmd .= ' --verbose --concise --debug=true';
 }
 $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 #DEBUG

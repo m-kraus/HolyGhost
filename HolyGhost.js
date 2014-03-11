@@ -1,5 +1,6 @@
 //TODO insert copyright and licensing
-//TODO check perfdata handling after failfast and missing values
+//TODO add information that is script is compatible only with casperjs api v.1.1
+
 /*
  * This "pre"-"test" exhibits all his event processing and functions to the real test afterwards
  */
@@ -59,21 +60,23 @@ pg.address = 'Start_'+pg.startTime.toISOString();
 casper.startTime = new Date();
 
 /*
+ * Actions on test failures
+ */
+casper.test.on("fail", function(failure) {
+	hgCapture(casper);
+	hgHar(casper);
+	casper.test.terminate("Aborted all remaining tests");
+});
+
+/*
  * Timeout options and handling
  */
 casper.options.timeout = 60000;
 casper.on('timeout', function() {
-	hgCapture(casper);
 	casper.test.fail('Test ran into Overall timeout');
-});
-casper.options.stepTimeout = 20000;
-casper.on('step.timeout', function() {
-	hgCapture(casper);
-	casper.test.fail('Test ran into Step timeout');
 });
 casper.options.waitTimeout = 10000;
 casper.on('waitFor.timeout', function() {
-	hgCapture(casper);
 	casper.test.fail('Test ran into WaitFor timeout');
 });
 
@@ -81,16 +84,18 @@ casper.on('waitFor.timeout', function() {
  * HTTP status callbacks
  */
 casper.on("http.status.404", function(resource) {
-        //failed.push(this.requestUrl);
-        hgCapture(casper);
         casper.test.fail('HTTP Error 404');
 });
 casper.on("http.status.500", function(resource) {
-        //failed.push(this.requestUrl);
-        hgCapture(casper);
         casper.test.fail('HTTP Error 500');
 });
 
+/*
+ * Load failed
+ */
+casper.on("load.failed", function(resource) {
+        casper.test.fail('Page loading failed');
+});
 
 /*
  * Funtion for capturing page html and screenshots
@@ -104,8 +109,14 @@ function hgCapture(casper) {
 	if ( casper.cli.get("hgScreenshot") ) {
 		casper.capture(resultpath+'/screenshot__'+now+'.png');
 	}
+}
+/*
+ * Funtion for getting har archive files
+ */
+function hgHar(casper) {
 	// Save HAR if enabled
 	if ( casper.cli.get("hgHar") ) {
+		var now = new Date().toISOString();
 		casper.endTime = new Date();
 		var content = JSON.stringify(createHar(pg.address, 'HolyGhost', pg.startTime, pg.resources), undefined, 3);
 		fs.write(resultpath+'/har.har', content, 'w');
@@ -119,16 +130,17 @@ if ( casper.cli.get("hgHar") ) {
 	function createHar(address, title, startTime, resources)
 	{
 	    var entries = [];
+	    var now = new Date().toISOString();
 	
 	    resources.forEach(function (resource) {
 	        var request = resource.request,
 	            startReply = resource.startReply,
 	            endReply = resource.endReply;
-	
-	        if (!request || !startReply || !endReply) {
+
+	        if (!request || !startReply || !endReply ) {
 	            return;
 	        }
-	        
+
 	        // Exclude Data URI from HAR file because
 	        // they aren't included in specification
 	        if (request.url.match(/(^data:image\/.*)/i)) {
@@ -222,8 +234,13 @@ casper.on('step.complete', function(step) {
 	if (utils.isTruthy(this.getCurrentUrl())) {
 		pg.address = this.getCurrentUrl();
 	}
-	hgCapture(casper);
 });
+/*
+ * Actions on test suite completion
+ */
+casper.test.on("exit", function() {
+	hgHar(casper);
+})
 
 /*
  * Finalizing this "test"
