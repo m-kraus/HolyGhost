@@ -15,12 +15,15 @@ TODO GNU Public License
 TODO Requirements Perl LibXML
 
 Usage: $0 Opions:
-	--test		file containing testcase (REQUIRED)
-	--dir		destination directory of test results (REQUIRED)
-	--proxy		specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
-	--keep		keep test results (screenshots and HAR files) on success
-	--debug		enable debugging output
-	--label		Use this string instead of "Total" as performance data label
+    --test      file containing testcase (REQUIRED)
+    --dir       destination directory of test results (REQUIRED)
+    --proxy     specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
+    --keep      keep test results (screenshots and HAR files) on success
+    --debug     enable debugging output
+    --label     Use this string instead of "Total" as performance data label
+    --param     Supply multiple optional parameters for use in your test cases.
+                This will translate to the casperjs-parameters --hgParam0 to hgParamN.
+                Use them in your test cases with casper.cli.get("hgParam0"); ... casper.cli.get("hgParamN");
 USAGE
 exit 0;
 }
@@ -46,60 +49,69 @@ my $timestamp = ( strftime "%Y-%m-%d_%H-%M-%S", localtime );
 
 #Prepare exit states
 my %ERRORS = (
-	'UNKNOWN',  '3',
-	'OK',       '0',
-	'WARNING',  '1',
-	'CRITICAL', '2'
+    'UNKNOWN',  '3',
+    'OK',       '0',
+    'WARNING',  '1',
+    'CRITICAL', '2'
 );
 
 # Parse options
 my %opt;
+my @params;
 my @required_opts = qw(test dir);
 GetOptions(
-	"h|help" => \&PrintUsage,
-	"test=s" => \$opt{test},
-	"dir=s" => \$opt{dir},
-	"proxy:s" => \$opt{proxy},
-	"keep" => \$opt{keep},
-	"debug" => \$opt{debug},
-	"label=s" => \$opt{label},
+    "h|help" => \&PrintUsage,
+    "test=s" => \$opt{test},
+    "dir=s" => \$opt{dir},
+    "proxy:s" => \$opt{proxy},
+    "keep" => \$opt{keep},
+    "debug" => \$opt{debug},
+    "label=s" => \$opt{label},
+    "param=s" => \@params,
  );
 foreach(@required_opts)
 {
-	if ( not defined $opt{$_} )
-	{
-		die_rc(3, "UNKNOWN: Required parameter --$_ not defined! See $0 -h for help.\n");
-	}
+    if ( not defined $opt{$_} )
+    {
+        die_rc(3, "UNKNOWN: Required parameter --$_ not defined! See $0 -h for help.\n");
+    }
 }
 
 # Create test result directory
 my $dest_dir = $opt{dir} . '/' . $timestamp . '_' . $pid;
 if ( ! -e $dest_dir )
 {
-	make_path($dest_dir) or die_rc(3, "UNKNOWN: Could not create directory $dest_dir - $!");
+    make_path($dest_dir) or die_rc(3, "UNKNOWN: Could not create directory $dest_dir - $!");
 }
 
 
 my $label;
 if ($opt{label})
 {
-	$label = $opt{label};
+    $label = $opt{label};
 } else {
-	$label = 'Total';
+    $label = 'Total';
 }
 
 
-my $casper_cmd = $casper_bin.' --no-colors --ignore-ssl-errors=true --pre='.$scriptpath.'/Ht.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
+my $casper_cmd = $casper_bin.' --no-colors --ignore-ssl-errors=true --pre='.$scriptpath.'/HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
 if ($opt{proxy})
 {
-	$casper_cmd .= ' --proxy-type=http --proxy='.$opt{proxy};
+    $casper_cmd .= ' --proxy-type=http --proxy='.$opt{proxy};
 } else {
-	$casper_cmd .= ' --proxy-type=none';
+    $casper_cmd .= ' --proxy-type=none';
 }
 if ($opt{debug})
 {
-	$casper_cmd .= ' --verbose --concise --debug=true';
+    $casper_cmd .= ' --verbose --concise --debug=true';
 }
+if (@params) {
+    my $cnt = 0;
+    foreach my $param (@params) {
+        $casper_cmd .= ' --hgParam'.$cnt.'="'.$param.'"';
+    }
+}
+
 $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 #DEBUG
 #print $casper_cmd."\n";
@@ -124,43 +136,43 @@ my $case = shift(@cases);
 my $case_name = $case->getAttribute("name");
 my ( $case_state, $case_shortname, $case_desc) = split(/::/, $case_name);
 unless ( $case_state =~ /^OK$|^WARNING$|^ERROR$|^CRITICAL$|^UNKNOWN$/ ) {
-	$case_state = "UNKNOWN";
+    $case_state = "UNKNOWN";
 }
 my $case_time = $case->getAttribute("time");
 
 my %step;
 TESTCASE: foreach my $step ($root->findnodes('/testsuites/testsuite[@name="'.$case_name.'"]/testcase')) {
-	my $step_name = $step->getAttribute("name");
-	next if $step_name =~ m/Test.ran.into/;
-	my ( $step_shortname, $step_desc) = split(/::/, $step_name);
-	$step{$step_shortname} += $step->getAttribute("time");
+    my $step_name = $step->getAttribute("name");
+    next if $step_name =~ m/Test.ran.into/;
+    my ( $step_shortname, $step_desc) = split(/::/, $step_name);
+    $step{$step_shortname} += $step->getAttribute("time");
 }
 
 # Format perfdata
 my $perfdata = "|";
 foreach my $pstep ( sort keys %step ) {
-	$perfdata .= "\'$pstep\'=".$step{$pstep}."s ";
+    $perfdata .= "\'$pstep\'=".$step{$pstep}."s ";
 }
 $perfdata .= "\'".$label."\'=". $case_time."s ";
 
 # Format plugin output
 my $output;
 if ( $rc == 0 ) {
-	$output = "OK: $case_shortname ( $case_desc ) passed.".$perfdata."\n";
+    $output = "OK: $case_shortname ( $case_desc ) passed.".$perfdata."\n";
 } else {
-	$output = "$case_state: $case_shortname ( $case_desc ) failed.".$perfdata."\n";
-	$rc = $ERRORS{$case_state};
+    $output = "$case_state: $case_shortname ( $case_desc ) failed.".$perfdata."\n";
+    $rc = $ERRORS{$case_state};
 }
 print $output;
-print @detailed;	
+print @detailed;    
 
 # Remove results on test success if "keep" is not desired
 unless ($opt{keep})
 {
-	if ( $rc == 0 )
-	{
-		remove_tree($dest_dir) or print $!;
-	}
+    if ( $rc == 0 )
+    {
+        remove_tree($dest_dir) or print $!;
+    }
 }
 
 exit $rc;
