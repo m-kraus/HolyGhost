@@ -39,7 +39,7 @@ my $scriptpath = dirname(File::Spec->rel2abs( __FILE__ ));
 
 # Casper executable to use
 my $casper_bin = '/usr/bin/casperjs';
- 
+
 # Extended die
 sub die_rc { my $return_code = shift; die @_ }
 
@@ -83,6 +83,7 @@ if ( ! -e $dest_dir )
 {
     make_path($dest_dir) or die_rc(3, "UNKNOWN: Could not create directory $dest_dir - $!");
 }
+my $cookiejar = $dest_dir.'/cookiejar';
 
 
 my $label;
@@ -93,8 +94,7 @@ if ($opt{label})
     $label = 'Total';
 }
 
-
-my $casper_cmd = $casper_bin.' --no-colors --ignore-ssl-errors=true --pre='.$scriptpath.'/HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot';
+my $casper_cmd = $casper_bin.' --no-colors --ssl-protocol=tlsv1 --ignore-ssl-errors=true --pre='.$scriptpath.'/HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot --cookies-file='.$cookiejar;
 if ($opt{proxy})
 {
     $casper_cmd .= ' --proxy-type=http --proxy='.$opt{proxy};
@@ -116,8 +116,10 @@ $casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
 #DEBUG
 #print $casper_cmd."\n";
 
+my $start = time;
 my @output = `$casper_cmd`;
 my $rc = ($? >> 8);
+my $duration = time - $start;
 my @detailed = grep (/^PASS|^FAIL|^#\s{2,}/,@output);
 # TODO safe escape detailed output, especially "|"
 # TODO handle CasperError
@@ -164,8 +166,10 @@ if ( $rc == 0 ) {
     $rc = $ERRORS{$case_state};
 }
 print $output;
-print @detailed;    
+print @detailed;
+print "CasperJS total runtime ".$duration." sec.\n";
 
+#unlink($cookiejar);
 # Remove results on test success if "keep" is not desired
 unless ($opt{keep})
 {
@@ -174,5 +178,6 @@ unless ($opt{keep})
         remove_tree($dest_dir) or print $!;
     }
 }
+
 
 exit $rc;
