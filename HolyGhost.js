@@ -96,6 +96,9 @@ casper.on("http.status.500", function(resource) {
 casper.on("load.failed", function(resource) {
         casper.test.fail('Page loading failed');
 });
+casper.on("error", function(msg, trace) {
+        casper.test.fail('Test failed with error' + msg);
+});
 
 /*
  * Funtion for capturing page html and screenshots
