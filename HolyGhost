@@ -19,6 +19,7 @@ Usage: $0 Opions:
     --dir       destination directory of test results (REQUIRED)
     --proxy     specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
     --keep      keep test results (screenshots and HAR files) on success
+    --delete    delete test results (screenshots and HAR files) even on error
     --debug     enable debugging output
     --label     Use this string instead of "Total" as performance data label
     --param     Supply multiple optional parameters for use in your test cases.
@@ -65,6 +66,7 @@ GetOptions(
     "dir=s" => \$opt{dir},
     "proxy:s" => \$opt{proxy},
     "keep" => \$opt{keep},
+    "delete" => \$opt{delete},
     "debug" => \$opt{debug},
     "label=s" => \$opt{label},
     "param=s" => \@params,
@@ -169,7 +171,6 @@ print $output;
 print @detailed;
 print "CasperJS total runtime ".$duration." sec.\n";
 
-#unlink($cookiejar);
 # Remove results on test success if "keep" is not desired
 unless ($opt{keep})
 {
@@ -178,6 +179,10 @@ unless ($opt{keep})
         remove_tree($dest_dir) or print $!;
     }
 }
-
+# Remove results in any case if "delete" is desired
+if ($opt{delete})
+{
+    remove_tree($dest_dir) or print $!;
+}
 
 exit $rc;
