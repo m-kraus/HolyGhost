@@ -160,14 +160,23 @@ foreach my $pstep ( sort keys %step ) {
 $perfdata .= "\'".$label."\'=". $case_time."s ";
 
 # Format plugin output
-my $output;
+my $output = "";
+my $addtl_output = "";
 if ( $rc == 0 ) {
     $output = "OK: $case_shortname ( $case_desc ) passed.".$perfdata."\n";
 } else {
     $output = "$case_state: $case_shortname ( $case_desc ) failed.".$perfdata."\n";
     $rc = $ERRORS{$case_state};
+
+    # read JSESSIONID if any
+    open (HARFILE, "<".$dest_dir."/har.har");
+    my $har = join("", <HARFILE>);
+    my @jsessionids = $har =~ /JSESSIONID=([^;]+)\;/g;
+    $addtl_output = join("\n", @jsessionids);
+
 }
 print $output;
+print $addtl_output;
 print @detailed;
 print "CasperJS total runtime ".$duration." sec.\n";
 
