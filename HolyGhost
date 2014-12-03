@@ -171,9 +171,8 @@ if ( $rc == 0 ) {
     # read JSESSIONID if any
     open (HARFILE, "<".$dest_dir."/har.har");
     my $har = join("", <HARFILE>);
-    my @jsessionids = $har =~ /JSESSIONID=([^;]+)\;/g;
-    $addtl_output = join("\n", @jsessionids);
-
+    my @jsessionids = $har =~ /(JSESSIONID=[^;]+)\;/g;
+    $addtl_output = "\n" . join("\n", @jsessionids) . "\n";
 }
 print $output;
 print $addtl_output;
