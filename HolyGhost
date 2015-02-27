@@ -1,32 +1,61 @@
 #!/usr/bin/perl -w
 
 # FEATURES TODO
-# make har and screenshots configurable
-# cli switch for casperjs binary
-# implement option --hgScreenshotAlways
+# casper return code 139 ?
+# documentation (viewer, resurrectio)
+#
+# universal html/js ui with js-harviewer for any webserver: simplehar
+# options harviewer_url, results_url
+# apache config
+# results_dir with .htaccess
+# web_location as new option
+#
+# omd demo setup with sakuli graphs or influxdb and grafana
+#
+# try to use only core perl modules
+# pattern extraction
 
 # Usage:
+#TODO GNU Public License
+#TODO Requirements Perl LibXML
 sub PrintUsage {
-print <<USAGE;
-Copyright (c) 2013 Michael Kraus
+    print <<USAGE;
+Copyright (c) 2013-2015 Michael Kraus
 
-TODO GNU Public License
+This file is part of HolyGhost.
 
-TODO Requirements Perl LibXML
+HolyGhost is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+HolyGhost is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This software uses phantomjs and casperjs. Make sure both programs are
+installed and within your path.
 
 Usage: $0 Opions:
-    --test      file containing testcase (REQUIRED)
-    --dir       destination directory of test results (REQUIRED)
-    --proxy     specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
-    --keep      keep test results (screenshots and HAR files) on success
-    --delete    delete test results (screenshots and HAR files) even on error
-    --debug     enable debugging output
-    --label     Use this string instead of "Total" as performance data label
-    --param     Supply multiple optional parameters for use in your test cases.
-                This will translate to the casperjs-parameters --hgParam0 to hgParamN.
-                Use them in your test cases with casper.cli.get("hgParam0"); ... casper.cli.get("hgParamN");
+    --test              file containing testcase (REQUIRED)
+    --resultsdir        destination directory of test results (REQUIRED)
+    TODO both must be set to enable viewer
+    --resultsurl        BaseURL of the test results directory (REQUIRED unless noviewer is set)
+    --viewerurl         BaseURL of the HAR viewer (REQUIRED unless noviewer is set)
+    --proxy             specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
+    --keep              keep test results (screenshots and HAR files) on success
+    --delete            delete test results (screenshots and HAR files) even on error
+    --debug             enable debugging output
+    --label             Use this string instead of "Total" as performance data label
+    --param             Supply multiple optional parameters for use in your test cases.
+                        Use them in your test cases with casper.cli.get("hgParam0"); ... casper.cli.get("hgParamN");
+
 USAGE
-exit 0;
+    exit 0;
 }
 
 use strict;
@@ -36,160 +65,199 @@ use File::Path qw(make_path remove_tree);
 use XML::LibXML;
 use File::Spec;
 use File::Basename;
-my $scriptpath = dirname(File::Spec->rel2abs( __FILE__ ));
-
-# Casper executable to use
-my $casper_bin = '/usr/bin/casperjs';
+use File::Which;
+use Time::HiRes qw(time);
+my $scriptpath = dirname( File::Spec->rel2abs(__FILE__) );
 
 # Extended die
 sub die_rc { my $return_code = shift; die @_ }
+
+# Casper executable to use
+my $casper_bin = which('casperjs');
+if ( ! $casper_bin ) {
+    die_rc( 3, "UNKNOWN: casperjs not found in path.\n" );
+}
 
 # Set base variables
 my $pid = $$;
 my $timestamp = ( strftime "%Y-%m-%d_%H-%M-%S", localtime );
 
-#Prepare exit states
-my %ERRORS = (
-    'UNKNOWN',  '3',
-    'OK',       '0',
-    'WARNING',  '1',
-    'CRITICAL', '2'
-);
+# Prepare exit states
+my %ERRORS = ( 'UNKNOWN', '3', 'OK', '0', 'WARNING', '1', 'CRITICAL', '2' );
 
 # Parse options
 my %opt;
 my @params;
-my @required_opts = qw(test dir);
+my @required_opts = qw(test resultsdir);
 GetOptions(
-    "h|help" => \&PrintUsage,
-    "test=s" => \$opt{test},
-    "dir=s" => \$opt{dir},
-    "proxy:s" => \$opt{proxy},
-    "keep" => \$opt{keep},
-    "delete" => \$opt{delete},
-    "debug" => \$opt{debug},
-    "label=s" => \$opt{label},
-    "param=s" => \@params,
- );
-foreach(@required_opts)
-{
-    if ( not defined $opt{$_} )
-    {
-        die_rc(3, "UNKNOWN: Required parameter --$_ not defined! See $0 -h for help.\n");
+    "h|help"       => \&PrintUsage,
+    "test=s"       => \$opt{test},
+    "resultsdir=s" => \$opt{resultsdir},
+    "resultsurl=s" => \$opt{resultsurl},
+    "viewerurl=s"  => \$opt{viewerurl},
+    "proxy:s"      => \$opt{proxy},
+    "keep"         => \$opt{keep},
+    "delete"       => \$opt{delete},
+    "debug"        => \$opt{debug},
+    "label=s"      => \$opt{label},
+    "param=s"      => \@params,
+);
+
+# Parse required options
+foreach (@required_opts) {
+    if ( not defined $opt{$_} ) {
+        die_rc( 3, "UNKNOWN: Required parameter --$_ not defined! See $0 -h for help.\n" );
     }
 }
 
-# Create test result directory
-my $dest_dir = $opt{dir} . '/' . $timestamp . '_' . $pid;
-if ( ! -e $dest_dir )
-{
-    make_path($dest_dir) or die_rc(3, "UNKNOWN: Could not create directory $dest_dir - $!");
+# Parse required options when har viewer is desired
+if ( $opt{viewerurl} && $opt{resultsurl} ) {
+    $opt{use_viewer} = 1;
+} else {
+    # TODO this is not valid...
 }
-my $cookiejar = $dest_dir.'/cookiejar';
 
+# Create test result directory
+my $dest_dir = $opt{resultsdir} . '/' . $timestamp . '_' . $pid;
+if ( !-e $dest_dir ) {
+    make_path($dest_dir)
+      or die_rc( 3, "UNKNOWN: Could not create directory $dest_dir - $!" );
+}
+my $cookiejar = $dest_dir . '/cookiejar';
 
 my $label;
-if ($opt{label})
-{
+if ( $opt{label} ) {
     $label = $opt{label};
-} else {
+}
+else {
     $label = 'Total';
 }
 
-my $casper_cmd = $casper_bin.' --no-colors --ssl-protocol=tlsv1 --ignore-ssl-errors=true --pre='.$scriptpath.'/HolyGhost.js --hgResultpath='.$dest_dir.' --hgHar --hgScreenshot --cookies-file='.$cookiejar;
-if ($opt{proxy})
-{
-    $casper_cmd .= ' --proxy-type=http --proxy='.$opt{proxy};
-} else {
+my $casper_cmd =
+    $casper_bin
+  . ' --no-colors'
+  . ' --ssl-protocol=tlsv1'
+  . ' --web-security=no'
+  . ' --ignore-ssl-errors=true'
+  . ' --pre=' . $scriptpath . '/HolyGhost.js'
+  . ' --hgResultpath=' . $dest_dir
+  . ' --cookies-file=' . $cookiejar;
+if ( $opt{proxy} ) {
+    $casper_cmd .= ' --proxy-type=http --proxy=' . $opt{proxy};
+}
+else {
     $casper_cmd .= ' --proxy-type=none';
 }
-if ($opt{debug})
-{
-    $casper_cmd .= ' --verbose --concise --debug=true';
+if ( $opt{debug} ) {
+    $casper_cmd .= ' --verbose --log-level=debug --concise --hgDebug';
 }
 if (@params) {
     my $cnt = 0;
     foreach my $param (@params) {
-        $casper_cmd .= ' --hgParam'.$cnt.'="'.$param.'"';
+        $casper_cmd .= ' --hgParam' . $cnt . '="' . $param . '"';
     }
 }
 
-$casper_cmd .= ' --xunit=\''.$dest_dir.'/xunit.log\' test '.$opt{test};
-#DEBUG
-#print $casper_cmd."\n";
+$casper_cmd .= ' --xunit=\'' . $dest_dir . '/xunit.log\' test ' . $opt{test};
 
-my $start = time;
-my @output = `$casper_cmd`;
-my $rc = ($? >> 8);
-my $duration = time - $start;
-my @detailed = grep (/^PASS|^FAIL|^#\s{2,}/,@output);
-# TODO safe escape detailed output, especially "|"
+if ( $opt{debug} ) {
+    print "CASPER CALL:\n";
+    print $casper_cmd . "\n";
+}
+
+my $start    = time;
+my @output   = `$casper_cmd`;
+my $rc       = ( $? >> 8 );
+my $duration =  sprintf (" %.3f", (time - $start) );
+my @detailed = grep ( /^PASS|^FAIL|^#\s{2,}/, @output );
+s/[\|]/_/g for @detailed; # Replace unsafe chars
+
+if ( $opt{debug} ) {
+    print "CASPER OUTPUT:\n";
+    print join("", @output);
+    print "CASPER RETURN CODE:\n";
+    print $rc . "\n";
+    print "CASPER RUNTIME:\n";
+    print $duration . "\n";
+    print "DETAILED NAGIOS MESSAGE:\n";
+    print join("", @detailed);
+}
+
 # TODO handle CasperError
 
 # Parse xunit log
 my %steps;
 my $parser = XML::LibXML->new();
-my $root = $parser->parse_file($dest_dir.'/xunit.log') or die_rc(3, "UNKNOWN: Cannot open " . $dest_dir . "/xunit.log for parsing\n");
+my $root   = $parser->parse_file( $dest_dir . '/xunit.log' )
+  or
+  die_rc( 3, "UNKNOWN: Cannot open " . $dest_dir . "/xunit.log for parsing\n" );
 
 # Note:
 # A HolyGhost-"Case" consist of exactly one xunit-"Testsuite", only the first Testsuite will be parsed.
 # A Holyghost-"Step" consists of one or more following xunit-"Testcases".
 my @cases = $root->findnodes('/testsuites/testsuite');
-my $case = shift(@cases);
+my $case  = shift(@cases);
 
 my $case_name = $case->getAttribute("name");
-my ( $case_state, $case_shortname, $case_desc) = split(/::/, $case_name);
+my ( $case_state, $case_shortname, $case_desc ) = split( /::/, $case_name );
 unless ( $case_state =~ /^OK$|^WARNING$|^ERROR$|^CRITICAL$|^UNKNOWN$/ ) {
     $case_state = "UNKNOWN";
 }
 my $case_time = $case->getAttribute("time");
 
 my %step;
-TESTCASE: foreach my $step ($root->findnodes('/testsuites/testsuite[@name="'.$case_name.'"]/testcase')) {
+TESTCASE: foreach my $step (
+    $root->findnodes(
+        '/testsuites/testsuite[@name="' . $case_name . '"]/testcase'
+    )
+  )
+{
     my $step_name = $step->getAttribute("name");
     next if $step_name =~ m/Test.ran.into/;
-    my ( $step_shortname, $step_desc) = split(/::/, $step_name);
+    my ( $step_shortname, $step_desc ) = split( /::/, $step_name );
     $step{$step_shortname} += $step->getAttribute("time");
 }
 
 # Format perfdata
 my $perfdata = "|";
 foreach my $pstep ( sort keys %step ) {
-    $perfdata .= "\'$pstep\'=".$step{$pstep}."s ";
+    $perfdata .= "\'$pstep\'=" . $step{$pstep} . "s ";
 }
-$perfdata .= "\'".$label."\'=". $case_time."s ";
+$perfdata .= "\'" . $label . "\'=" . $case_time . "s ";
+$perfdata .= "\'CasperJSRuntime\'=" . $duration . "s ";
 
 # Format plugin output
-my $output = "";
-my $addtl_output = "";
+my $output       = "";
+# TODO my $addtl_output = "";
 if ( $rc == 0 ) {
-    $output = "OK: $case_shortname ( $case_desc ) passed.".$perfdata."\n";
-} else {
-    $output = "$case_state: $case_shortname ( $case_desc ) failed.".$perfdata."\n";
+    $output = "OK: $case_shortname ( $case_desc ) passed." . $perfdata . "\n";
+}
+else {
+    $output =
+      "$case_state: $case_shortname ( $case_desc ) failed." . $perfdata . "\n";
     $rc = $ERRORS{$case_state};
 
-    # read JSESSIONID if any
-    open (HARFILE, "<".$dest_dir."/har.har");
-    my $har = join("", <HARFILE>);
-    my @jsessionids = $har =~ /(JSESSIONID=[^;]+)\;/g;
-    $addtl_output = "\n" . join("\n", @jsessionids) . "\n";
+    # TODO add optional parsers here
+    # TODO read JSESSIONID if any
+    # TODO open( HARFILE, "<" . $dest_dir . "/har.har" );
+    # TODO my $har = join( "", <HARFILE> );
+    # TODO my @jsessionids = $har =~ /(JSESSIONID=[^;]+)\;/g;
+    # TODO $addtl_output = "\n" . join( "\n", @jsessionids ) . "\n";
 }
 print $output;
-print $addtl_output;
+# TODO print $addtl_output;
 print @detailed;
-print "CasperJS total runtime ".$duration." sec.\n";
+print "CasperJS total runtime " . $duration . " sec.\n";
 
 # Remove results on test success if "keep" is not desired
-unless ($opt{keep})
-{
-    if ( $rc == 0 )
-    {
+unless ( $opt{keep} ) {
+    if ( $rc == 0 ) {
         remove_tree($dest_dir) or print $!;
     }
 }
+
 # Remove results in any case if "delete" is desired
-if ($opt{delete})
-{
+if ( $opt{delete} ) {
     remove_tree($dest_dir) or print $!;
 }
 
