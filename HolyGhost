@@ -3,7 +3,7 @@
 # FEATURES TODO
 # Document dir and url and how to move it outside
 # casper return code 139 ?
-# results_dir with .htaccess
+# www/results with .htaccess
 #
 # omd demo setup with sakuli graphs or influxdb and grafana
 #
@@ -108,7 +108,7 @@ my $testcase = basename($opt{test}, ".js");
 
 # Create test result directory
 my $dest_dir;
-if ( $opt{url} ) {
+if ( $opt{dir} ) {
     $dest_dir = $opt{dir} . '/results/' . $testcase . '/' . $timestamp . '_' . $pid;
 } else {
     $dest_dir = $scriptpath . '/www/results/' . $testcase . '/' . $timestamp . '_' . $pid;
@@ -182,8 +182,6 @@ if ( $opt{debug} ) {
     print "DETAILED NAGIOS MESSAGE:\n";
     print join("", @detailed);
 }
-
-# TODO handle CasperError
 
 # Parse xunit log
 my %steps;
