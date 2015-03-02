@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 # FEATURES TODO
+# Document dir and url and how to move it outside
 # casper return code 139 ?
 # results_dir with .htaccess
 #
@@ -37,8 +38,8 @@ installed and within your path.
 
 Usage: $0 Opions:
     --test              file containing testcase (REQUIRED). The file name (without the suffix .js) will be part of the results path. It is recommended, to choose the file name unique.
-    --dir               file system path to www folder of HolyGhost (REQUIRED)
-    --url               web path (with trailing slash!) to www folder of HolyGhost. A webserver has to be configured to serve this url. If omitted, HolyGhost does not provide any URLs in notifications.
+    --dir               file system path to www folder of HolyGhost. Needed if www folder has been moved to another location outside HolyGhost.
+    --url               url (with trailing slash!) to www folder of HolyGhost. A webserver has to be configured to serve this url. If omitted, HolyGhost does not provide any URLs in notifications.
     --proxy             specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
     --keep              keep test results (screenshots and HAR files) on success
     --delete            delete test results (screenshots and HAR files) even on error
@@ -81,7 +82,7 @@ my %ERRORS = ( 'UNKNOWN', '3', 'OK', '0', 'WARNING', '1', 'CRITICAL', '2' );
 # Parse options
 my %opt;
 my @params;
-my @required_opts = qw(test dir);
+my @required_opts = qw(test);
 GetOptions(
     "h|help"       => \&PrintUsage,
     "test=s"       => \$opt{test},
@@ -106,7 +107,12 @@ foreach (@required_opts) {
 my $testcase = basename($opt{test}, ".js");
 
 # Create test result directory
-my $dest_dir = $opt{dir} . '/results/' . $testcase . '/' . $timestamp . '_' . $pid;
+my $dest_dir;
+if ( $opt{url} ) {
+    $dest_dir = $opt{dir} . '/results/' . $testcase . '/' . $timestamp . '_' . $pid;
+} else {
+    $dest_dir = $scriptpath . '/www/results/' . $testcase . '/' . $timestamp . '_' . $pid;
+}
 if ( !-e $dest_dir ) {
     make_path($dest_dir)
       or die_rc( 3, "UNKNOWN: Could not create directory $dest_dir - $!" );
