@@ -1,0 +1,22 @@
+# STRONG HTACCESS PROTECTION
+<Files ~ "^.*\.([Hh][Tt][Aa])">
+ order allow,deny
+  deny from all
+  </Files>
+# DIRECTORY CUSTOMIZATION
+<IfModule mod_autoindex.c>
+
+    # ENABLE INDEXING
+    Options +Indexes
+
+    # INDEX OPTIONS
+    IndexOptions +Charset=UTF-8 +FancyIndexing +IgnoreCase +FoldersFirst +XHTML +HTMLTable +SuppressRules +SuppressDescription +NameWidth=* +IconsAreLinks
+
+    # META VIEWPORT
+    IndexHeadInsert "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+
+    IndexIgnore header.html footer.html favicon.ico .htaccess .ftpquota .DS_Store icons *.log *,v *,t .??* *~ *#
+
+    #IndexStyleSheet autoindex.css
+
+</IfModule>

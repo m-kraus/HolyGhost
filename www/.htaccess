@@ -1,0 +1,7 @@
+# DIRECTORY CUSTOMIZATION
+<IfModule mod_autoindex.c>
+
+    # DISABLE INDEXING
+    Options -Indexes
+
+</IfModule>

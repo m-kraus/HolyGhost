@@ -79,9 +79,7 @@ casper.test.setUp(function() {
 });
 // Tear down:
 casper.test.tearDown(function() {
-    //unused
-    //casper.test.info("Clearing cookies");
-    //casper.page.clearCookies();
+    //ununsed
 });
 
 /*
@@ -104,13 +102,9 @@ casper.test.on("fail", function(failure) {
 /*
  * Actions on test completion
  */
-// TODO complete or success
-if (casper.cli.get("hgDebug")) {
-    casper.test.on("complete", function() {
-        hgCapture(casper);
-    });
-}
-
+casper.test.on("complete", function() {
+    // unused
+});
 
 /*
  * Timeout options and handling
@@ -184,11 +178,16 @@ function createHar(address, title, startTime, resources) {
 
         // Exclude Data URIs from HAR file because
         // they aren't included in specification
-        if (request.url.match(/(^data:image\/.*)/i)) {
+        if (request.url.match(/(^data:(image|font|application)\/.*)/i)) {
             return;
+        }
+        
+        if (typeof request.time === 'string') {
+            request.time = new Date(request.time);
         }
 
         entries.push({
+            cache: {},
             startedDateTime: request.time.toISOString(),
             time: endReply.time - request.time,
             request: {
@@ -199,7 +198,7 @@ function createHar(address, title, startTime, resources) {
                 headers: request.headers,
                 queryString: [],
                 headersSize: -1,
-                bodySize: -1
+                bodySize: -1,
             },
             response: {
                 status: endReply.status,
@@ -207,15 +206,14 @@ function createHar(address, title, startTime, resources) {
                 httpVersion: "HTTP/1.1",
                 cookies: [],
                 headers: endReply.headers,
-                redirectURL: "",
                 headersSize: -1,
+                redirectURL: "",
                 bodySize: startReply.bodySize,
                 content: {
+                    mimeType: endReply.contentType,
                     size: startReply.bodySize,
-                    mimeType: endReply.contentType
                 }
             },
-            cache: {},
             timings: {
                 blocked: 0,
                 dns: -1,
@@ -243,6 +241,7 @@ function createHar(address, title, startTime, resources) {
                 id: address,
                 title: title,
                 pageTimings: {
+                    //onLoad: casper.endTime - casper.startTime
                     onLoad: casper.endTime - casper.startTime
                 }
             }],
@@ -266,6 +265,7 @@ casper.on('resource.received', function(res) {
     if (res.stage === 'end') {
         pg.resources[res.id].endReply = res;
     }
+    pg.endTime = new Date();
 });
 
 /*
@@ -274,6 +274,9 @@ casper.on('resource.received', function(res) {
 casper.on('step.complete', function(step) {
     if (utils.isTruthy(this.getCurrentUrl())) {
         pg.address = this.getCurrentUrl();
+    }
+    if (casper.cli.get("hgDebug")) {
+        hgCapture(casper);
     }
 });
 /*
