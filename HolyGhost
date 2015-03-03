@@ -1,7 +1,6 @@
 #!/usr/bin/perl -w
 
 # FEATURES TODO
-# Document dir and url and how to move it outside
 # casper return code 139 ?
 # www/results with .htaccess
 #
@@ -37,13 +36,13 @@ This software uses phantomjs and casperjs. Make sure both programs are
 installed and within your path.
 
 Usage: $0 Opions:
-    --test              file containing testcase (REQUIRED). The file name (without the suffix .js) will be part of the results path. It is recommended, to choose the file name unique.
-    --dir               file system path to www folder of HolyGhost. Needed if www folder has been moved to another location outside HolyGhost.
-    --url               url (with trailing slash!) to www folder of HolyGhost. A webserver has to be configured to serve this url. If omitted, HolyGhost does not provide any URLs in notifications.
-    --proxy             specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
-    --keep              keep test results (screenshots and HAR files) on success
-    --delete            delete test results (screenshots and HAR files) even on error
-    --debug             enable debugging output
+    --test              File containing testcase (REQUIRED). The file name (without the suffix .js) will be part of the results path. It is recommended, to choose the file name unique.
+    --dir               File system path to www folder of HolyGhost. Needed only if www folder has been moved to another location outside HolyGhost.
+    --url               URL with trailing slash to www folder of HolyGhost. A webserver has to be configured to serve this url. If omitted, HolyGhost does not provide any URLs in its output.
+    --proxy             Specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
+    --keep              Keep test results (screenshots and HAR files) on success
+    --delete            Delete test results (screenshots and HAR files) even on error
+    --debug             Enable debugging output
     --label             Use this string instead of "Total" as performance data label
     --param             Supply multiple optional parameters for use in your test cases.
                         Use them in your test cases with casper.cli.get("hgParam0"); ... casper.cli.get("hgParamN");
