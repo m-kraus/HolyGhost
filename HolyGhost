@@ -4,8 +4,6 @@
 # casper return code 139 ?
 # www/results with .htaccess
 #
-# omd demo setup with sakuli graphs or influxdb and grafana
-#
 # try to use only core perl modules
 # pattern extraction
 #
@@ -39,6 +37,7 @@ Usage: $0 Opions:
     --test              File containing testcase (REQUIRED). The file name (without the suffix .js) will be part of the results path. It is recommended, to choose the file name unique.
     --dir               File system path to www folder of HolyGhost. Needed only if www folder has been moved to another location outside HolyGhost.
     --url               URL with trailing slash to www folder of HolyGhost. A webserver has to be configured to serve this url. If omitted, HolyGhost does not provide any URLs in its output.
+    --html              Print html formatted links
     --proxy             Specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
     --keep              Keep test results (screenshots and HAR files) on success
     --delete            Delete test results (screenshots and HAR files) even on error
@@ -87,6 +86,7 @@ GetOptions(
     "test=s"       => \$opt{test},
     "dir=s"        => \$opt{dir},
     "url=s"        => \$opt{url},
+    "html"         => \$opt{html},
     "proxy:s"      => \$opt{proxy},
     "keep"         => \$opt{keep},
     "delete"       => \$opt{delete},
@@ -249,10 +249,18 @@ print @detailed;
 if ( ! $opt{delete}) {
     if ( $opt{url} ) {
         if ( $opt{keep} || $rc != 0 ) {
-            print "\nWaterfall chart:\n";
-            print $opt{url} . "viewer.html?path=" . $results_url . "har.har" . "\n";
-            print "Recorded assets:\n";
-            print $opt{url} . $results_url . "\n\n";
+	    if ( $opt{html} ) {
+                print "\n" . '<a href="' . $opt{url} . 'viewer.html?path=' . $results_url . 'har.har">Waterfall chart ';
+                print "( " . $opt{url} . "viewer.html?path=" . $results_url . "har.har" . " )</a>\n";
+                print "\n" . '<a href="' . $opt{url} . $results_url . '">Recorded assets ';
+                print "( " . $opt{url} . $results_url . " )</a>\n";
+		print "\n";
+	    } else {
+                print "\nWaterfall chart:\n";
+                print $opt{url} . "viewer.html?path=" . $results_url . "har.har" . "\n";
+                print "\nRecorded assets:\n";
+                print $opt{url} . $results_url . "\n\n";
+	    }
         }
     }
 }
