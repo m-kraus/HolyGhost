@@ -65,6 +65,37 @@ my $scriptpath = dirname( File::Spec->rel2abs(__FILE__) );
 # Extended die
 sub die_rc { my $return_code = shift; die @_ }
 
+#possible code for graphite sender
+## Graphite sender - pass $case_name,%step as argument
+#sub send_graphite
+#{
+#    # Format: HolyGhost.CASE_NAME.STEP_NAME Value Epochtime\n
+#
+#    #TODO: pass in arguments
+#    
+#    my $graphite_server = '127.0.0.1';
+#    my $graphite_port = 2003;
+#    
+#    my $sock = IO::Socket::INET->new(
+#            PeerAddr => $graphite_server,
+#            PeerPort => $graphite_port,
+#            Proto    => 'tcp'
+#    );
+#    
+#    my $time = time;
+#    $case_name =~ s/\./_/g;
+#    $step_name =~ s/\./_/g;
+#    #TODO: also replace spaces
+#    foreach my $gstep ( sort keys %step ) {
+#        $sock->send("HolyGhost.$case_name.$gstep $step{$gstep} $time\n") unless $opt{debug};
+#        print "HolyGhost.$case_name.$gstep $step{$gstep} $time\n" if $opt{debug};
+#    }
+#    
+#    $sock->shutdown(2);
+#}
+
+
+
 # Casper executable to use
 my $casper_bin = which('casperjs');
 if ( ! $casper_bin ) {
@@ -272,3 +303,4 @@ if ( $opt{delete} ) {
 }
 
 exit $rc;
+
