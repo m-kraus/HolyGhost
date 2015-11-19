@@ -180,7 +180,7 @@ else {
     $casper_cmd .= ' --proxy-type=none';
 }
 if ( $opt{debug} ) {
-    $casper_cmd .= ' --verbose --log-level=debug --concise --hgDebug';
+    $casper_cmd .= ' --verbose --log-level=debug --hgDebug';
 }
 if (@params) {
     my $cnt = 0;
@@ -232,6 +232,8 @@ unless ( $case_state =~ /^OK$|^WARNING$|^ERROR$|^CRITICAL$|^UNKNOWN$/ ) {
     $case_state = "UNKNOWN";
 }
 my $case_time = $case->getAttribute("time");
+
+s/$case_name/$case_shortname ( $case_desc )/ for @detailed;
 
 my %step;
 TESTCASE: foreach my $step (
