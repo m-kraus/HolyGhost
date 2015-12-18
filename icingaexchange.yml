@@ -1,0 +1,23 @@
+name: HolyGhost
+description: "file:///README.md"
+url: "https://github.com/m-kraus/HolyGhost"
+tags: website, phantomjs, casperjs, endtoend, webkit, browser
+vendor: Linux
+target: Website
+type: Plugin
+license: gplv3
+releases: 
+  - 
+    name: 1.0
+    description: "1.0 Release"
+    files: 
+      - 
+        name: HolyGhost-1.0.tar.gz
+        url: "file:///releases/HolyGhost-1.0.tar.gz"
+        description: "First release"
+        checksum: d972de605c095a12bbc59f40ec64489e
+      - 
+        name: HolyGhost-1.0.zip
+        url: "file:///releases/HolyGhost-1.0.zip"
+        description: "First release"
+        checksum: 120e6de9d7fd8afea30e5630c11c1fcc
