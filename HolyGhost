@@ -166,6 +166,7 @@ else {
 # Construct CasperJS command
 my $casper_cmd =
     $casper_bin
+  . ' test'
   . ' --no-colors'
   . ' --ssl-protocol=tlsv1'
   . ' --web-security=no'

@@ -1,37 +1,37 @@
 # About HolyGhost
 
-HolyGhost is a monitoring solution for performing end2end tests on websites (HTML/JavaScript). HolyGhost uses PhantomJS and CasperJS and therefore can run headless and with very low impact in multiple environments. HolyGhost has been tested on Linux and Mac OSX. HolyGhost is a plugin for nagios and similar monitoring tools like icinga, naemon or shinken.  
+HolyGhost is a monitoring solution for performing end2end tests on websites (HTML/JavaScript). HolyGhost uses PhantomJS (http://www.phantomjs.org) and CasperJS (http://www.casperjs.org) and therefore can run headless and with very low impact in multiple environments. HolyGhost has been tested on Linux and Mac OSX. HolyGhost is a plugin for nagios and similar monitoring tools like icinga, naemon or shinken.  
 
 ## Prerequisites
 
 To use HolyGhost phantomjs and casperjs have to be installed and reachable in your path.
 
-HolyGhost needs CasperJS API version 1.1+.
-
-**I recommend to use PhantomJS 1.9.7 and CasperJS 1.1-beta3 at the moment. Any newer versions have currently some major drawbacks.**
+HolyGhost needs CasperJS API version 1.1+. HolyGhost is tested with PhantomJS 2.1.1 and CasperJS 1.1.1 on Linux.
 
 HolyGhost needs the perl modules XML::libXML and File::Which. On Ubuntu or Debian for exmaple you can install them with the following command:
 
     sudo apt-get install libxml-libxml-perl libfile-which-perl
 
-PhantomJS 1.9 requires libfontconfig1. On Ubuntu or Debian you can install it with the following command:
+PhantomJS requires fontconfig. On Ubuntu or Debian you can install it with the following command:
 
     sudo apt-get install libfontconfig1
 
 ### Installation under Linux
 
 Get phantomjs depending on your Architecture (32bit/64bit) from http://phantomjs.org/download.html
+At the time of writing this is https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
 
     cd /opt
-    sudo tar xvf Downloads/phantomjs-1.9.7-linux-x86_64.tar
-    sudo ln -s phantomjs-1.9.7-linux-x86_64 phantomjs
+    sudo tar xjvf Downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
+    sudo ln -s phantomjs-2.1.1-linux-x86_64 phantomjs
     sudo ln -s /opt/phantomjs/bin/phantomjs /usr/local/bin/
 
-Get casperjs from http://casperjs.org/
+Get casperjs from https://github.com/casperjs/casperjs/releases:
+At the time of writing this is https://github.com/casperjs/casperjs/archive/1.1.1.tar.gz
 
     cd /opt
-    sudo unzip Downloads/n1k0-casperjs-1.1-beta3-0-g4f105a9.zip
-    sudo ln -s n1k0-casperjs-4f105a9 casperjs
+    sudo tar xzvf Downloads/1.1.1.tar.gz
+    sudo ln -s casperjs-1.1.1 casperjs
     sudo ln -s /opt/casperjs/bin/casperjs /usr/local/bin/
     
 ## Write or record your tests
