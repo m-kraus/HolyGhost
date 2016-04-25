@@ -8,16 +8,16 @@ type: Plugin
 license: gplv3
 releases: 
   - 
-    name: 1.0
-    description: "1.0 Release"
+    name: 1.1
+    description: "1.1 Release"
     files: 
       - 
-        name: HolyGhost-1.0.tar.gz
-        url: "file:///releases/HolyGhost-1.0.tar.gz"
-        description: "First release"
-        checksum: d972de605c095a12bbc59f40ec64489e
+        name: HolyGhost-1.1.tar.gz
+        url: "https://github.com/m-kraus/HolyGhost/archive/v1.1.tar.gz"
+        description: "Use PhantomJS 2.1.1 and CasperJS 1.1.1"
+        checksum: e2de69de00a82a54df3510d472904777
       - 
-        name: HolyGhost-1.0.zip
-        url: "file:///releases/HolyGhost-1.0.zip"
-        description: "First release"
-        checksum: 120e6de9d7fd8afea30e5630c11c1fcc
+        name: HolyGhost-1.1.zip
+        url: "https://github.com/m-kraus/HolyGhost/archive/v1.1.zip"
+        description: "Use PhantomJS 2.1.1 and CasperJS 1.1.1"
+        checksum: 21fa84494fc03c164d9defad8ef8aeca
