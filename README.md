@@ -6,7 +6,7 @@ HolyGhost is a monitoring solution for performing end2end tests on websites (HTM
 
 To use HolyGhost phantomjs and casperjs have to be installed and reachable in your path.
 
-HolyGhost needs CasperJS API version 1.1+. HolyGhost is tested with PhantomJS 2.1.1 and CasperJS 1.1.1 on Linux.
+HolyGhost needs CasperJS API version 1.1+. HolyGhost is tested with PhantomJS 2.1.1 and CasperJS 1.1.3 on Linux.
 
 HolyGhost needs the perl modules XML::libXML and File::Which. On Ubuntu or Debian for exmaple you can install them with the following command:
 
@@ -30,10 +30,10 @@ Get casperjs from https://github.com/casperjs/casperjs/releases:
 At the time of writing this is https://github.com/casperjs/casperjs/archive/1.1.1.tar.gz
 
     cd /opt
-    sudo tar xzvf Downloads/1.1.1.tar.gz
-    sudo ln -s casperjs-1.1.1 casperjs
+    sudo tar xzvf Downloads/1.1.3.tar.gz
+    sudo ln -s casperjs-1.1.3 casperjs
     sudo ln -s /opt/casperjs/bin/casperjs /usr/local/bin/
-    
+
 ## Write or record your tests
 
 In the dirctory ```tests``` you can find some sample test cases. These are ready to run and can give you an idea, what you can do with HolyGhost.
@@ -84,7 +84,7 @@ Please note, that you can use the step name multiple times. Using this feature y
 In performance data output, you also get the total execution time of the test case. Default label is "Total", you can change this with the command line option ```--label```.
 
 You can specify any amount of parameters on your HolyGhost command line using the option ```--param```. You can use these parameters within your test cases using
-    
+
     casper.cli.get("hgParam0");
     casper.cli.get("hgParamr1");
     ...
@@ -108,7 +108,7 @@ To use this option, you have to have a webserver running, expose the folder ```w
 
 When ```--url``` is set, the plugin output contains links to the results of the curent test case, if a failure occurred or when the option ```--keep``` is used.
 
-The option ```--dir``` is needed, if you want or need to move the directory ```wwww``` containing the HAR viewer and the results directory to another location. 
+The option ```--dir``` is needed, if you want or need to move the directory ```wwww``` containing the HAR viewer and the results directory to another location.
 
 ## Debug mode
 
