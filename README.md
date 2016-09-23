@@ -6,8 +6,7 @@ HolyGhost is a monitoring solution for performing end2end tests on websites (HTM
 
 To use HolyGhost phantomjs and casperjs have to be installed and reachable in your path.
 
-HolyGhost needs CasperJS API version 1.1+. HolyGhost is tested with PhantomJS 1.9.8 and CasperJS 1.1.3 on Linux.
-There occurred some issues together with PhantomJS 2.1.1, wich are currently under investigation.
+HolyGhost needs CasperJS API version 1.1+. HolyGhost is tested with PhantomJS 2.1.1 and CasperJS 1.1.3 on Linux.
 
 HolyGhost needs the perl modules XML::libXML and File::Which. On Ubuntu or Debian for exmaple you can install them with the following command:
 

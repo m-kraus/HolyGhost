@@ -1,18 +1,18 @@
 /*
  * Copyright (c) 2013-2015 Michael Kraus
- * 
+ *
  * This file is part of HolyGhost.
- * 
+ *
  * HolyGhost is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * HolyGhost is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses>.
  */
@@ -95,9 +95,10 @@ casper.startTime = new Date();
  * Actions on test failures
  */
 casper.test.on("fail", function(failure) {
-    hgCapture(casper);
+    hgCapture(casper, "fail");
     hgHar(casper);
-    casper.test.terminate("Aborted all remaining tests");
+    // must not be used with casperjs > 1.1.3
+    //casper.test.terminate("Aborted all remaining tests");
 });
 /*
  * Actions on test completion
@@ -141,13 +142,13 @@ casper.on("error", function(msg, trace) {
 /*
  * Funtion for capturing page html and screenshots
  */
-function hgCapture(casper) {
+function hgCapture(casper, type) {
         var now = new Date().toISOString();
         // Save HTML
         var html = casper.getHTML();
-        fs.write(resultpath + '/html__' + now + '.html', html, 'w');
-        // Take screenshots 
-        casper.capture(resultpath + '/screenshot__' + now + '.png');
+        fs.write(resultpath + '/html_' + type + '_' + now + '.html', html, 'w');
+        // Take screenshots
+        casper.capture(resultpath + '/screenshot_' + type + '_' + now + '.png');
     }
     /*
      * Funtion for getting har archive files
@@ -181,7 +182,7 @@ function createHar(address, title, startTime, resources) {
         if (request.url.match(/(^data:(image|font|application)\/.*)/i)) {
             return;
         }
-        
+
         if (typeof request.time === 'string') {
             request.time = new Date(request.time);
         }
@@ -276,7 +277,7 @@ casper.on('step.complete', function(step) {
         pg.address = this.getCurrentUrl();
     }
     if (casper.cli.get("hgDebug")) {
-        hgCapture(casper);
+        hgCapture(casper, "debug");
     }
 });
 /*
