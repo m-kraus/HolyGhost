@@ -171,6 +171,7 @@ else {
 my $casper_cmd =
     $casper_bin
   . ' test'
+  . ' --fail-fast'
   . ' --no-colors'
   . ' --ssl-protocol=tlsv1'
   . ' --web-security=no'
