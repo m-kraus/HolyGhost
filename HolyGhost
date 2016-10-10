@@ -37,6 +37,7 @@ Usage: $0 Opions:
     --test              File containing testcase (REQUIRED). The file name (without the suffix .js) will be part of the results path. It is recommended, to choose the file name unique.
     --dir               File system path to www folder of HolyGhost. Needed only if www folder has been moved to another location outside HolyGhost.
     --url               URL with trailing slash to www folder of HolyGhost. A webserver has to be configured to serve this url. If omitted, HolyGhost does not provide any URLs in its output.
+    --path              Direct file system path to the results directory of one test-case - only needed for special cases.
     --html              Print html formatted links
     --proxy             Specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
     --keep              Keep test results (screenshots and HAR files) on success
@@ -116,6 +117,7 @@ GetOptions(
     "h|help"       => \&PrintUsage,
     "test=s"       => \$opt{test},
     "dir=s"        => \$opt{dir},
+    "path=s"       => \$opt{path},
     "url=s"        => \$opt{url},
     "html"         => \$opt{html},
     "proxy:s"      => \$opt{proxy},
@@ -138,7 +140,9 @@ my $testcase = basename($opt{test}, ".js");
 
 # Create test result directory
 my $dest_dir;
-if ( $opt{dir} ) {
+if ( $opt{path} ) {
+    $dest_dir = $opt{path} . '/' . $timestamp . '_' . $pid;
+} elsif ( $opt{dir} ) {
     $dest_dir = $opt{dir} . '/results/' . $testcase . '/' . $timestamp . '_' . $pid;
 } else {
     $dest_dir = $scriptpath . '/www/results/' . $testcase . '/' . $timestamp . '_' . $pid;
