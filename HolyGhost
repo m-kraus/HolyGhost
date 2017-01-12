@@ -39,6 +39,7 @@ Usage: $0 Opions:
     --url               URL with trailing slash to www folder of HolyGhost. A webserver has to be configured to serve this url. If omitted, HolyGhost does not provide any URLs in its output.
     --path              Direct file system path to the results directory of one test-case - only needed for special cases.
     --html              Print html formatted links
+    --protocol          Protocol version for SSL (i.e. --ssl-protocol parameter of CasperJS). Default is "any", possible values depend on underlaying libraries, for example "tlsv1", "tlsv1.2", etc.
     --proxy             Specify the proxy server to use, e.g. --proxy=192.168.1.42:8080
     --keep              Keep test results (screenshots and HAR files) on success
     --delete            Delete test results (screenshots and HAR files) even on error
@@ -121,6 +122,7 @@ GetOptions(
     "url=s"        => \$opt{url},
     "html"         => \$opt{html},
     "proxy:s"      => \$opt{proxy},
+    "protocol=s"   => \$opt{protocol},
     "keep"         => \$opt{keep},
     "delete"       => \$opt{delete},
     "debug"        => \$opt{debug},
@@ -167,13 +169,22 @@ else {
     $label = 'Total';
 }
 
+# SSL protocol version
+my $protocol;
+if ( $opt{protocol} ) {
+    $protocol = $opt{protocol};
+}
+else {
+    $protocol = 'any';
+}
+
 # Construct CasperJS command
 my $casper_cmd =
     $casper_bin
   . ' test'
   . ' --fail-fast'
   . ' --no-colors'
-  . ' --ssl-protocol=tlsv1'
+  . ' --ssl-protocol=' . $protocol
   . ' --web-security=no'
   . ' --ignore-ssl-errors=true'
   . ' --pre=' . $scriptpath . '/HolyGhost.js'
@@ -288,18 +299,18 @@ print @detailed;
 if ( ! $opt{delete}) {
     if ( $opt{url} ) {
         if ( $opt{keep} || $rc != 0 ) {
-	    if ( $opt{html} ) {
+            if ( $opt{html} ) {
                 print "\n" . '<a href="' . $opt{url} . 'viewer.html?path=' . $results_url . 'har.har">Waterfall chart ';
                 print "( " . $opt{url} . "viewer.html?path=" . $results_url . "har.har" . " )</a>\n";
                 print "\n" . '<a href="' . $opt{url} . $results_url . '">Recorded assets ';
                 print "( " . $opt{url} . $results_url . " )</a>\n";
-		print "\n";
-	    } else {
+                print "\n";
+            } else {
                 print "\nWaterfall chart:\n";
                 print $opt{url} . "viewer.html?path=" . $results_url . "har.har" . "\n";
                 print "\nRecorded assets:\n";
                 print $opt{url} . $results_url . "\n\n";
-	    }
+            }
         }
     }
 }
