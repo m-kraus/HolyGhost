@@ -325,7 +325,7 @@ unless ( $opt{keep} ) {
 }
 
 # Remove results in any case if "delete" is desired
-if ( $opt{delete} ) {
+if ( $opt{delete} && -d $dest_dir ) {
     remove_tree($dest_dir) or print $!;
 }
 
