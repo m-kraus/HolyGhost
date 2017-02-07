@@ -53,6 +53,7 @@ USAGE
 }
 
 use strict;
+use utf8;
 use Getopt::Long;
 use POSIX qw(strftime);
 use File::Path qw(make_path remove_tree);
@@ -244,6 +245,7 @@ my @cases = $root->findnodes('/testsuites/testsuite');
 my $case  = shift(@cases);
 
 my $case_name = $case->getAttribute("name");
+utf8::encode($case_name);
 my ( $case_state, $case_shortname, $case_desc ) = split( /::/, $case_name );
 unless ( $case_state =~ /^OK$|^WARNING$|^ERROR$|^CRITICAL$|^UNKNOWN$/ ) {
     $case_state = "UNKNOWN";
