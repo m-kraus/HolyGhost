@@ -146,9 +146,9 @@ my $dest_dir;
 if ( $opt{path} ) {
     $dest_dir = $opt{path} . '/' . $timestamp . '_' . $pid;
 } elsif ( $opt{dir} ) {
-    $dest_dir = $opt{dir} . '/results/' . $testcase . '/' . $timestamp . '_' . $pid;
+    $dest_dir = $opt{dir} . '/results/' . $testcase . '_' . $timestamp . '_' . $pid;
 } else {
-    $dest_dir = $scriptpath . '/www/results/' . $testcase . '/' . $timestamp . '_' . $pid;
+    $dest_dir = $scriptpath . '/www/results/' . $testcase . '_' . $timestamp . '_' . $pid;
 }
 if ( !-e $dest_dir ) {
     make_path($dest_dir)
@@ -157,7 +157,7 @@ if ( !-e $dest_dir ) {
 # Results part for urls
 my $results_url;
 if ( $opt{url} ) {
-    $results_url = 'results/' . $testcase . '/' . $timestamp . '_' . $pid .'/';
+    $results_url = 'results/' . $testcase . '_' . $timestamp . '_' . $pid .'/';
 }
 # Cookie-Jar
 my $cookiejar = $dest_dir . '/cookiejar';
