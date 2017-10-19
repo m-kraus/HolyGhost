@@ -86,7 +86,7 @@ In performance data output, you also get the total execution time of the test ca
 You can specify any amount of parameters on your HolyGhost command line using the option ```--param```. You can use these parameters within your test cases using
 
     casper.cli.get("hgParam0");
-    casper.cli.get("hgParamr1");
+    casper.cli.get("hgParam1");
     ...
     casper.cli.get("hgParamN");
 
