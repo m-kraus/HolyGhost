@@ -27,7 +27,7 @@ At the time of writing this is https://bitbucket.org/ariya/phantomjs/downloads/p
     sudo ln -s /opt/phantomjs/bin/phantomjs /usr/local/bin/
 
 Get casperjs from https://github.com/casperjs/casperjs/releases:
-At the time of writing this is https://github.com/casperjs/casperjs/archive/1.1.1.tar.gz
+At the time of writing this is https://github.com/casperjs/casperjs/archive/1.1.3.tar.gz
 
     cd /opt
     sudo tar xzvf Downloads/1.1.3.tar.gz
