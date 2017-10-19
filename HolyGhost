@@ -202,9 +202,18 @@ if ( $opt{debug} ) {
 }
 if (@params) {
     my $cnt = 0;
+    my $params;
     foreach my $param (@params) {
-        $casper_cmd .= ' --hgParam' . $cnt . '="' . $param . '"';
+        $params .= ' --hgParam' . $cnt . '="' . $param . '"';
+        $cnt++;
     }
+    if ( $opt{debug} ) {
+        print "PARAMS:\n";
+        print join("\n", @params);
+        print "\nPARAMS_FOR_CASPERJS:\n";
+        print "$params\n";
+    }
+    $casper_cmd .= $params;
 }
 $casper_cmd .= ' --xunit=\'' . $dest_dir . '/xunit.log\' test ' . $opt{test};
 
